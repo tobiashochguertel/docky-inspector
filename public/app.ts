@@ -73,6 +73,7 @@ interface InspectorMeta {
 
 let lastMeta: InspectorMeta | null = null;
 let lastTotalW = 0;
+let lastTileLabel = "";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -242,6 +243,7 @@ function groupOpen(name: string, fallback: boolean): boolean {
 function tileInspector(tiles: LayoutTile[], i: number): string {
   const t = tiles[i];
   const meta = lastMeta;
+  lastTileLabel = t.label;
   const prev = tiles[i - 1];
   const next = tiles[i + 1];
   const x0 = t.c - t.w / 2;
@@ -281,6 +283,27 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<dl>${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
   const group = (name: string, fallback: boolean, inner: string): string =>
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
+  const row = meta ? labelRowHeight(meta.fontSize) : 0;
+  const iconSlot = iconSlotSize(t.w, t.h);
+  const iconSrc = iconSrcFor(t);
+  const iconChild = `
+    <details${groupOpen("Tile › Icon", true) ? " open" : ""} data-group="Tile › Icon"><summary>Icon</summary>
+      ${iconSrc ? `<div class="prev"><img src="${iconSrc}" onload="this.closest('.prev').querySelector('.dim-src').textContent=this.naturalWidth+'×'+this.naturalHeight+' source'" onerror="this.parentElement.style.display='none'" alt=""></div>` : ""}
+      ${rows([
+        ["rendered", iconSlot],
+        ["inspector", "64×64"],
+        ["source", `<span class="dim-src">…</span>`],
+      ])}
+    </details>`;
+  const titleChild = `
+    <details${groupOpen("Tile › Title", true) ? " open" : ""} data-group="Tile › Title"><summary>Title</summary>
+      ${rows([
+        ["text", t.label || "(none)"],
+        ["placement", meta?.placement ?? "?"],
+        ["font size", `${meta?.fontSize ?? 0}pt`],
+        ["row height", `${f(row)}pt`],
+      ])}
+    </details>`;
   return (
     box +
     `<div class="props">` +
@@ -296,15 +319,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ["id", t.id],
       ["kind", t.kind],
       ["section", sectionOf(t.kind)],
-    ]) + (iconSrcFor(t)
-      ? `<div class="prev"><img src="${iconSrcFor(t)}" onerror="this.parentElement.style.display='none'" alt=""></div>`
-      : "")) +
-    group("Label", true, rows([
-      ["text", t.label || "(none)"],
-      ["placement", meta?.placement ?? "?"],
-      ["font size", `${meta?.fontSize ?? 0}pt`],
-      ["row height", `${f(row)}pt`],
-    ])) +
+    ]) + iconChild + titleChild) +
     group("Dock", false, rows([
       ["position", meta?.position ?? "?"],
       ["base tile", meta ? `${meta.tileW}×${meta.tileH}` : "?"],
@@ -313,6 +328,42 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     ])) +
     `</div>`
   );
+}
+
+/** Approximate icon slot in the dock: tile minus paddings, label row, and gaps. */
+function iconSlotSize(w: number, h: number): string {
+  if (!lastMeta) return "—";
+  const row = labelRowHeight(lastMeta.fontSize);
+  const ip = lastMeta.iconPad;
+  const v = lastMeta.vPad;
+  const vertical = lastMeta.position === "left" || lastMeta.position === "right";
+  const gap = 2; // TileLabelMetrics.spacing, mirrored from Docky
+  let iw: number;
+  let ih: number;
+  if (lastMeta.placement === "above" || lastMeta.placement === "below") {
+    iw = vertical ? w - 2 * v - 2 * ip : w - 2 * ip;
+    ih = vertical ? h - 2 * ip : h - 2 * v - row - gap - 2 * ip;
+  } else {
+    const slot = sidewaysSlotApprox();
+    iw = vertical ? w - slot - gap - 2 * ip : w - 2 * v - slot - gap - 2 * ip;
+    ih = vertical ? h - 2 * v - 2 * ip : h - 2 * ip;
+  }
+  const f = (n: number): string => (Math.round(n * 10) / 10).toString();
+  return `≈ ${f(Math.max(0, iw))}×${f(Math.max(0, ih))}`;
+}
+
+/** Mirrors TileLabelMetrics.sidewaysSlot: measure then cap at 96. */
+let measureCanvas: HTMLCanvasElement | null = null;
+
+function sidewaysSlotApprox(): number {
+  const meta = lastMeta;
+  const label = lastTileLabel;
+  if (!meta || !label) return 0;
+  if (!measureCanvas) measureCanvas = document.createElement("canvas");
+  const ctx = measureCanvas.getContext("2d");
+  if (!ctx) return 96;
+  ctx.font = `500 ${meta.fontSize}px system-ui, sans-serif`;
+  return Math.min(Math.ceil(ctx.measureText(label).width), 96);
 }
 
 /** Collapse state persists across re-renders. */
