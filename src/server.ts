@@ -53,6 +53,23 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<{ stdou
   }
 }
 
+/** Real bundle for a Spotlight result: follows Finder wrapper stubs
+ * (`Foo.app/Wrapper/Foo.app`) whose outer bundle holds no Resources. */
+async function resolveAppBundle(appPath: string): Promise<string | null> {
+  const info = join(appPath, "Contents", "Info.plist");
+  if (await Bun.file(info).exists()) return appPath;
+  const glob = new Bun.Glob("Wrapper/*.app");
+  try {
+    for await (const name of glob.scan({ cwd: appPath })) {
+      const inner = join(appPath, name, "Contents", "Info.plist");
+      if (await Bun.file(inner).exists()) return join(appPath, name);
+    }
+  } catch {
+    /* missing dir */
+  }
+  return null;
+}
+
 /** Real app icon PNG via the bundle's .icns (sips), cached forever. Null when unresolvable. */
 async function appIcon(bid: string): Promise<string | null> {
   const safe = `${bid.replace(/[^A-Za-z0-9.\-]/g, "_")}@${ICON_SIZE}.png`;
@@ -64,19 +81,25 @@ async function appIcon(bid: string): Promise<string | null> {
     .map((l) => l.trim())
     .find((l) => l.endsWith(".app"));
   if (!appPath) return null;
+  const bundle = await resolveAppBundle(appPath);
+  if (!bundle) return null;
+  const resources = join(bundle, "Contents", "Resources");
   const plist = await runWithTimeout(
-    ["/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIconFile", join(appPath, "Contents", "Info.plist")],
+    ["/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIconFile", join(bundle, "Contents", "Info.plist")],
     5000,
   );
-  const resources = join(appPath, "Contents", "Resources");
   const candidates: string[] = [];
   const named = plist?.stdout.trim();
   if (named) {
     candidates.push(join(resources, named), join(resources, `${named}.icns`));
   }
-  const glob = new Bun.Glob("*.icns");
-  for await (const name of glob.scan({ cwd: resources })) {
-    candidates.push(join(resources, name));
+  try {
+    const glob = new Bun.Glob("*.icns");
+    for await (const name of glob.scan({ cwd: resources })) {
+      candidates.push(join(resources, name));
+    }
+  } catch {
+    /* Resources dir missing */
   }
   const icns = await (async () => {
     for (const c of candidates) {
@@ -95,8 +118,7 @@ async function appIcon(bid: string): Promise<string | null> {
 }
 
 /** System artwork for non-app tiles (trash, generic folder). */
-async function systemIcon(kind: string): Promise<string | null> {
-  const safe = `system-${kind}@${ICON_SIZE}.png`;
+async function systemIcon(kind: string): Promise<string | null> {  const safe = `system-${kind}@${ICON_SIZE}.png`;
   const cached = join(ICON_CACHE, safe);
   if (await Bun.file(cached).exists()) return cached;
   const source =
@@ -117,6 +139,24 @@ async function systemIcon(kind: string): Promise<string | null> {
     await Bun.write(cached, Bun.file(source));
   }
   return cached;
+}
+
+async function serveIcon(url: URL): Promise<Response> {
+  const id = url.searchParams.get("id") ?? "";
+  const kind = url.searchParams.get("kind") ?? "";
+  let png: string | null = null;
+  if (kind === "app") {
+    const bid = bundleIdFromTileId(id);
+    if (bid) png = await appIcon(bid);
+  } else if (kind === "trash" || kind === "folder") {
+    png = await systemIcon(kind);
+  } else {
+    return new Response("no resolvable icon for this kind", { status: 404 });
+  }
+  if (!png) return new Response("icon not found", { status: 404 });
+  return new Response(Bun.file(png), {
+    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
+  });
 }
 
 async function readSnapshot(): Promise<{ data: LayoutSnapshot; mtime: number } | null> {
@@ -154,21 +194,11 @@ const server = Bun.serve({
       });
     }
     if (url.pathname === "/api/icon") {
-      const id = url.searchParams.get("id") ?? "";
-      const kind = url.searchParams.get("kind") ?? "";
-      let png: string | null = null;
-      if (kind === "app") {
-        const bid = bundleIdFromTileId(id);
-        if (bid) png = await appIcon(bid);
-      } else if (kind === "trash" || kind === "folder") {
-        png = await systemIcon(kind);
-      } else {
-        return new Response("no resolvable icon for this kind", { status: 404 });
+      try {
+        return await serveIcon(url);
+      } catch {
+        return new Response("icon resolution failed", { status: 404 });
       }
-      if (!png) return new Response("icon not found", { status: 404 });
-      return new Response(Bun.file(png), {
-        headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
-      });
     }
     if (url.pathname === "/api/history") {
       return Response.json(history.map(({ id, time, summary }) => ({ id, time, summary })));
