@@ -25,6 +25,8 @@ export interface LayoutTile {
   iconM?: [number, number];
   /** Measured label sub-frame [w, h] (present once rendered). */
   labelM?: [number, number];
+  /** Measured painted visual [w, h] (folder mosaic, card, icon image). */
+  paintM?: [number, number];
 }
 
 export interface LayoutSnapshot {
