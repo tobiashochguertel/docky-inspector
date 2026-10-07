@@ -73,7 +73,6 @@ interface InspectorMeta {
 
 let lastMeta: InspectorMeta | null = null;
 let lastTotalW = 0;
-let lastTileLabel = "";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -240,10 +239,134 @@ function groupOpen(name: string, fallback: boolean): boolean {
 }
 
 /** DevTools-style box model + grouped properties for one tile. */
+interface SideVals {
+  t: number;
+  r: number;
+  b: number;
+  l: number;
+}
+
+interface ElBox {
+  content: [number, number];
+  padding: SideVals;
+  margin: SideVals;
+}
+
+const f1 = (n: number): string => (Math.round(n * 10) / 10).toString();
+const zeroSides: SideVals = { t: 0, r: 0, b: 0, l: 0 };
+
+/** Shared nested box-model diagram (Docky tiles have no border). */
+function boxDiagram(m: SideVals, p: SideVals, cw: number, ch: number, approx: boolean): string {
+  const sides = (v: SideVals): string =>
+    `<span class="bm-v" style="top:2px">${f1(v.t)}</span>` +
+    `<span class="bm-h" style="right:2px">${f1(v.r)}</span>` +
+    `<span class="bm-v" style="bottom:2px">${f1(v.b)}</span>` +
+    `<span class="bm-h" style="left:2px">${f1(v.l)}</span>`;
+  return (
+    `<div class="bm"><div class="bm-margin"><span class="bm-tag">margin</span>` +
+    sides(m) +
+    `<div class="bm-border"><span class="bm-tag">border</span>` +
+    sides(zeroSides) +
+    `<div class="bm-padding"><span class="bm-tag">padding</span>` +
+    sides(p) +
+    `<div class="bm-content">${f1(cw)}×${f1(ch)}${approx ? " ≈" : ""}</div>` +
+    `</div></div></div></div>`
+  );
+}
+
+let measureCanvas: HTMLCanvasElement | null = null;
+
+/** Measured text extents with the inspector's font stack. */
+function measureLabel(text: string, fontSize: number): { w: number; h: number } {
+  if (!measureCanvas) measureCanvas = document.createElement("canvas");
+  const ctx = measureCanvas.getContext("2d");
+  if (!ctx || !text) return { w: 0, h: 0 };
+  ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
+  const m = ctx.measureText(text);
+  return {
+    w: m.width,
+    h: (m.actualBoundingBoxAscent ?? fontSize * 0.8) + (m.actualBoundingBoxDescent ?? fontSize * 0.2),
+  };
+}
+
+/** Icon/title boxes with margins measured to the tile edge, so the parts
+ *  always sum to the tile frame. Icon content is approximate (aspect-fit
+ *  may letterbox inside its slot). */
+function elementBoxes(
+  t: LayoutTile,
+  meta: InspectorMeta,
+): { icon: ElBox; title: ElBox | null } {
+  const W = t.w;
+  const H = t.h;
+  const ip = meta.iconPad;
+  const vPad = meta.vPad;
+  const vertical = meta.position === "left" || meta.position === "right";
+  const cT = !vertical ? vPad : 0;
+  const cB = !vertical ? vPad : 0;
+  const cL = vertical ? vPad : 0;
+  const cR = vertical ? vPad : 0;
+  const labelH = Math.ceil(meta.fontSize * 1.2);
+  const gap = 2; // TileLabelMetrics.spacing, mirrored from Docky
+  interface Rect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }
+  const cx = ip + cL;
+  const cy = ip + cT;
+  const cw = W - 2 * ip - cL - cR;
+  const ch = H - 2 * ip - cT - cB;
+  let iconR: Rect;
+  let labelR: Rect | null = null;
+  if (meta.placement === "above" || meta.placement === "below") {
+    if (!t.label) {
+      iconR = { x: cx, y: cy, w: cw, h: ch };
+    } else if (meta.placement === "below") {
+      iconR = { x: cx, y: cy, w: cw, h: ch - labelH - gap };
+      labelR = { x: cx, y: cy + ch - labelH, w: cw, h: labelH };
+    } else {
+      labelR = { x: cx, y: cy, w: cw, h: labelH };
+      iconR = { x: cx, y: cy + labelH + gap, w: cw, h: ch - labelH - gap };
+    }
+  } else {
+    const tm0 = measureLabel(t.label, meta.fontSize);
+    const slot = t.label ? Math.min(Math.ceil(tm0.w), 96) : 0;
+    if (!t.label) {
+      iconR = { x: cx, y: cy, w: cw, h: ch };
+    } else if (meta.placement === "trailing") {
+      iconR = { x: cx, y: cy, w: cw - slot - gap, h: ch };
+      labelR = { x: cx + cw - slot, y: cy, w: slot, h: ch };
+    } else {
+      labelR = { x: cx, y: cy, w: slot, h: ch };
+      iconR = { x: cx + slot + gap, y: cy, w: cw - slot - gap, h: ch };
+    }
+  }
+  const margins = (r: Rect): SideVals => ({
+    t: r.y,
+    l: r.x,
+    b: H - (r.y + r.h),
+    r: W - (r.x + r.w),
+  });
+  const icon: ElBox = { content: [iconR.w, iconR.h], padding: { ...zeroSides }, margin: margins(iconR) };
+  let title: ElBox | null = null;
+  if (labelR && t.label) {
+    const tm = measureLabel(t.label, meta.fontSize);
+    const tw = Math.min(tm.w, Math.max(0, labelR.w - 4));
+    const padH = Math.max(0, (labelR.w - tw) / 2);
+    const padV = Math.max(0, (labelR.h - tm.h) / 2);
+    title = {
+      content: [tw, tm.h],
+      padding: { t: padV, r: padH, b: padV, l: padH },
+      margin: margins(labelR),
+    };
+  }
+  return { icon, title };
+}
+
 function tileInspector(tiles: LayoutTile[], i: number): string {
   const t = tiles[i];
   const meta = lastMeta;
-  lastTileLabel = t.label;
   const prev = tiles[i - 1];
   const next = tiles[i + 1];
   const x0 = t.c - t.w / 2;
@@ -252,65 +375,47 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
   const mAfter = next ? next.c - next.w / 2 - x1 : lastTotalW - x1;
   const vertical = meta ? meta.position === "left" || meta.position === "right" : false;
   const vPad = meta?.vPad ?? 0;
-  const row = meta ? labelRowHeight(meta.fontSize) : 0;
-  const padTop = vertical ? 0 : vPad;
-  const padBottom = vertical ? 0 : vPad;
-  const padLeft = vertical ? vPad : 0;
-  const padRight = vertical ? vPad : 0;
-  const f = (n: number): string => (Math.round(n * 10) / 10).toString();
-  const mTop = vertical ? mBefore : 0;
-  const mBottom = vertical ? mAfter : 0;
-  const mLeft = vertical ? 0 : mBefore;
-  const mRight = vertical ? 0 : mAfter;
-  const sides = (t: number, r: number, b: number, l: number): string =>
-    `<span class="bm-v" style="top:2px">${f(t)}</span>` +
-    `<span class="bm-h" style="right:2px">${f(r)}</span>` +
-    `<span class="bm-v" style="bottom:2px">${f(b)}</span>` +
-    `<span class="bm-h" style="left:2px">${f(l)}</span>`;
-  const box = `
-    <div class="bm"><div class="bm-margin"><span class="bm-tag">margin</span>
-      ${sides(mTop, mRight, mBottom, mLeft)}
-      <div class="bm-border"><span class="bm-tag">border</span>
-        ${sides(0, 0, 0, 0)}
-        <div class="bm-padding"><span class="bm-tag">padding</span>
-          ${sides(padTop, padRight, padBottom, padLeft)}
-          <div class="bm-content">${f(t.w)}×${f(t.h)}</div>
-        </div>
-      </div>
-    </div></div>`;
+  const tilePad: SideVals = vertical
+    ? { t: 0, r: vPad, b: 0, l: vPad }
+    : { t: vPad, r: 0, b: vPad, l: 0 };
+  const tileMargin: SideVals = vertical
+    ? { t: mBefore, r: 0, b: mAfter, l: 0 }
+    : { t: 0, r: mAfter, b: 0, l: mBefore };
   const gapNext = next ? `${gapBetween(t, next).toFixed(1)}pt` : "—";
   const rows = (pairs: [string, string][]): string =>
     `<dl>${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
   const group = (name: string, fallback: boolean, inner: string): string =>
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
-  const iconSlot = iconSlotSize(t.w, t.h);
+  const els = meta ? elementBoxes(t, meta) : null;
   const iconSrc = iconSrcFor(t);
   const iconChild = `
     <details${groupOpen("Tile › Icon", true) ? " open" : ""} data-group="Tile › Icon"><summary>Icon</summary>
+      ${els ? boxDiagram(els.icon.margin, els.icon.padding, els.icon.content[0], els.icon.content[1], true) : ""}
       ${iconSrc ? `<div class="prev"><img src="${iconSrc}" onload="this.closest('.prev').querySelector('.dim-src').textContent=this.naturalWidth+'×'+this.naturalHeight+' source'" onerror="this.parentElement.style.display='none'" alt=""></div>` : ""}
       ${rows([
-        ["rendered", iconSlot],
+        ["rendered", els ? `≈ ${f1(els.icon.content[0])}×${f1(els.icon.content[1])}` : "—"],
         ["inspector", "64×64"],
         ["source", `<span class="dim-src">…</span>`],
       ])}
     </details>`;
   const titleChild = `
     <details${groupOpen("Tile › Title", true) ? " open" : ""} data-group="Tile › Title"><summary>Title</summary>
+      ${els?.title ? boxDiagram(els.title.margin, els.title.padding, els.title.content[0], els.title.content[1], false) : ""}
       ${rows([
         ["text", t.label || "(none)"],
         ["placement", meta?.placement ?? "?"],
         ["font size", `${meta?.fontSize ?? 0}pt`],
-        ["row height", `${f(row)}pt`],
+        ["row height", meta ? `${f1(labelRowHeight(meta.fontSize))}pt` : "?"],
       ])}
     </details>`;
   return (
-    box +
+    boxDiagram(tileMargin, tilePad, t.w, t.h, false) +
     `<div class="props">` +
     group("Box", true, rows([
-      ["frame", `${f(x0)} … ${f(x1)} (w ${f(t.w)}, h ${f(t.h)})`],
-      ["center", `${f(t.c)}`],
-      ["margin before / after", `${f(mBefore)} / ${f(mAfter)}pt`],
-      ["padding v / icon", `${f(vPad)} / ${f(meta?.iconPad ?? 0)}pt`],
+      ["frame", `${f1(x0)} … ${f1(x1)} (w ${f1(t.w)}, h ${f1(t.h)})`],
+      ["center", `${f1(t.c)}`],
+      ["margin before / after", `${f1(mBefore)} / ${f1(mAfter)}pt`],
+      ["padding v / icon", `${f1(vPad)} / ${f1(meta?.iconPad ?? 0)}pt`],
       ["gap → next", gapNext],
     ])) +
     group("Tile", true, rows([
@@ -327,42 +432,6 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     ])) +
     `</div>`
   );
-}
-
-/** Approximate icon slot in the dock: tile minus paddings, label row, and gaps. */
-function iconSlotSize(w: number, h: number): string {
-  if (!lastMeta) return "—";
-  const row = labelRowHeight(lastMeta.fontSize);
-  const ip = lastMeta.iconPad;
-  const v = lastMeta.vPad;
-  const vertical = lastMeta.position === "left" || lastMeta.position === "right";
-  const gap = 2; // TileLabelMetrics.spacing, mirrored from Docky
-  let iw: number;
-  let ih: number;
-  if (lastMeta.placement === "above" || lastMeta.placement === "below") {
-    iw = vertical ? w - 2 * v - 2 * ip : w - 2 * ip;
-    ih = vertical ? h - 2 * ip : h - 2 * v - row - gap - 2 * ip;
-  } else {
-    const slot = sidewaysSlotApprox();
-    iw = vertical ? w - slot - gap - 2 * ip : w - 2 * v - slot - gap - 2 * ip;
-    ih = vertical ? h - 2 * v - 2 * ip : h - 2 * ip;
-  }
-  const f = (n: number): string => (Math.round(n * 10) / 10).toString();
-  return `≈ ${f(Math.max(0, iw))}×${f(Math.max(0, ih))}`;
-}
-
-/** Mirrors TileLabelMetrics.sidewaysSlot: measure then cap at 96. */
-let measureCanvas: HTMLCanvasElement | null = null;
-
-function sidewaysSlotApprox(): number {
-  const meta = lastMeta;
-  const label = lastTileLabel;
-  if (!meta || !label) return 0;
-  if (!measureCanvas) measureCanvas = document.createElement("canvas");
-  const ctx = measureCanvas.getContext("2d");
-  if (!ctx) return 96;
-  ctx.font = `500 ${meta.fontSize}px system-ui, sans-serif`;
-  return Math.min(Math.ceil(ctx.measureText(label).width), 96);
 }
 
 /** Collapse state persists across re-renders. */
