@@ -38,8 +38,9 @@ body { background: #111827; color: #e5e7eb; font: 12px system-ui, sans-serif; ma
 .bm-h { position: absolute; top: 50%; transform: translateY(-50%); color: #e5e7eb; }
 .bm-tag { color: #9ca3af; position: absolute; top: 2px; left: 4px; }
 .props details { border-top: 1px solid #1f2937; }
-.prev { display: flex; justify-content: center; margin: 8px 0 2px; }
+.prev { display: flex; justify-content: center; margin: 8px 0 2px; position: relative; }
 .prev img { width: 64px; height: 64px; object-fit: contain; }
+.prev .artbox { position: absolute; border: 1px dashed #22c55e; pointer-events: none; }
 .props summary { cursor: pointer; padding: 4px 0; color: #e5e7eb; font-weight: bold; }
 .props dl { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; margin: 2px 0 8px; }
 .props dt { color: #fca5a5; }

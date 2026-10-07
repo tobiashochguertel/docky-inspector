@@ -446,6 +446,8 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
   const els = meta ? elementBoxes(t, meta) : null;
   const iconSrc = iconSrcFor(t);
+  const slotW = els ? els.icon.content[0] : 0;
+  const slotH = els ? els.icon.content[1] : 0;
   const gapsGroup = (name: string, m: SideVals, cw: number, ch: number): string =>
     `<details${groupOpen(name, true) ? " open" : ""} data-group="${name}"><summary>Gaps</summary>` +
     gapsDiagram(m, cw, ch) +
@@ -453,10 +455,12 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
   const iconChild = `
     <details${groupOpen("Tile › Icon", true) ? " open" : ""} data-group="Tile › Icon"><summary>Icon</summary>
       ${els ? boxDiagram(els.icon.margin, els.icon.padding, els.icon.content[0], els.icon.content[1], true) : ""}
-      ${iconSrc ? `<div class="prev"><img src="${iconSrc}" onload="this.closest('.prev').querySelector('.dim-src').textContent=this.naturalWidth+'×'+this.naturalHeight+' source'" onerror="this.parentElement.style.display='none'" alt=""></div>` : ""}
+      ${iconSrc ? `<div class="prev"><img src="${iconSrc}" onload="iconLoaded(this)" data-slot-w="${slotW}" data-slot-h="${slotH}" onerror="this.parentElement.style.display='none'" alt=""></div>` : ""}
       ${rows([
         ["painted", t.paintM ? `${f1(t.paintM[0])}×${f1(t.paintM[1])}` : "…"],
         ["slot", t.iconM ? `${f1(t.iconM[0])}×${f1(t.iconM[1])}` : "…"],
+        ["artwork", `<span class="dim-art">…</span>`],
+        ["transparent t/r/b/l", `<span class="dim-tr">…</span>`],
         ["inspector", "64×64"],
         ["source", `<span class="dim-src">…</span>`],
       ])}
@@ -499,6 +503,61 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `</div>`
   );
 }
+
+/** Visible (non-transparent) bounds of loaded artwork, plus overlay. */
+function iconLoaded(img: HTMLImageElement): void {
+  const prev = img.closest(".prev");
+  const art = prev?.querySelector<HTMLElement>(".dim-art");
+  const tr = prev?.querySelector<HTMLElement>(".dim-tr");
+  const showSrc = prev?.querySelector<HTMLElement>(".dim-src");
+  if (showSrc) showSrc.textContent = `${img.naturalWidth}×${img.naturalHeight} source`;
+  try {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, w, h).data;
+    let x0 = w;
+    let y0 = h;
+    let x1 = -1;
+    let y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (px[(y * w + x) * 4 + 3] > 8) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 < 0 || !prev || !art || !tr) return;
+    const slotW = Number(img.dataset.slotW ?? w);
+    const slotH = Number(img.dataset.slotH ?? h);
+    const sx = slotW / w;
+    const sy = slotH / h;
+    const inset = { t: y0, r: w - 1 - x1, b: h - 1 - y1, l: x0 };
+    art.textContent = `${x1 - x0 + 1}×${y1 - y0 + 1}px ≈ ${f1((x1 - x0 + 1) * sx)}×${f1((y1 - y0 + 1) * sy)}pt`;
+    tr.textContent = `${inset.t} / ${inset.r} / ${inset.b} / ${inset.l}px`;
+    const overlay = document.createElement("div");
+    overlay.className = "artbox";
+    overlay.style.left = `${(x0 / w) * 100}%`;
+    overlay.style.top = `${(y0 / h) * 100}%`;
+    overlay.style.width = `${((x1 - x0 + 1) / w) * 100}%`;
+    overlay.style.height = `${((y1 - y0 + 1) / h) * 100}%`;
+    prev.appendChild(overlay);
+  } catch {
+    /* tainted canvas or missing pixels */
+  }
+}
+
+// Inline handlers need a global; the bundle is a module.
+(window as unknown as { iconLoaded: typeof iconLoaded }).iconLoaded = iconLoaded;
 
 /** Collapse state persists across re-renders. */
 function wireGroups(): void {
