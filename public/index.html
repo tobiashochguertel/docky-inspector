@@ -46,6 +46,10 @@ body { background: #111827; color: #e5e7eb; font: 12px system-ui, sans-serif; ma
 .props dt { color: #fca5a5; }
 .props dd { margin: 0; overflow-wrap: anywhere; }
 .controls label { margin-right: 12px; }
+#legend { margin-top: 8px; color: #9ca3af; }
+#legend span { margin-right: 14px; }
+#legend .sw { display: inline-block; width: 10px; height: 10px; border: 1px dashed; border-radius: 2px; margin-right: 4px; vertical-align: baseline; }
+#legend .kindtag { color: #6b7280; }
 .sel { outline: 2px solid #fff !important; }
 .verdict-ok { color: #22c55e; }
 .verdict-bad { color: #f87171; }
@@ -60,6 +64,7 @@ button { background: #1f2937; color: #e5e7eb; border: 1px solid #4b5563; border-
 <h2>Docky Inspector <span id="live">●</span> <span id="viewing"></span></h2>
 <div id="verdicts"></div>
 <div class="controls" style="margin-top:8px" id="guides"></div>
+<div id="legend"><span><i class="sw" style="border-color:#3b82f6"></i>tile frame</span><span><i class="sw" style="border-color:#22c55e"></i>icon slot</span><span><i class="sw" style="border-color:#fb9231"></i>painted visual</span><span><i class="sw" style="border-color:#facc15"></i>label frame</span><span><i class="sw" style="border-color:#f472b6"></i>padding</span><span class="kindtag">kind tag = placeholder when real icons are off</span></div>
 <div id="bar"></div>
 <div id="panel"><div id="panel-head">✥ metrics</div><div id="panel-body"><div><button id="live-btn" style="display:none">● back to live</button></div><div id="metrics">click a tile…</div><div class="hist" id="hist"></div></div></div>
 <script src="/app.js"></script>

@@ -38,7 +38,7 @@ const GUIDES = [
 ] as const;
 
 const VIEW_TOGGLES = [
-  { id: "v-icons", label: "real icons", on: false },
+  { id: "v-icons", label: "real icons", on: true },
   { id: "v-sections", label: "section markers", on: true },
   { id: "v-padding", label: "padding boxes", on: true },
   { id: "v-gaps", label: "gap labels", on: false },
@@ -48,7 +48,7 @@ const VIEW_TOGGLES = [
 type ViewId = (typeof VIEW_TOGGLES)[number]["id"];
 
 const view: Record<ViewId, boolean> = {
-  "v-icons": false,
+  "v-icons": true,
   "v-sections": true,
   "v-padding": true,
   "v-gaps": false,
@@ -674,7 +674,7 @@ function initPanel(): void {
   });
 }
 
-const TOGGLE_STATE_KEY = "docky-inspector-toggles";
+const TOGGLE_STATE_KEY = "docky-inspector-toggles-v2";
 
 function loadToggleState(): Record<string, boolean> {
   try {
