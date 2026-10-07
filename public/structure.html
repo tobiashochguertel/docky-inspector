@@ -6,73 +6,98 @@
 <style>
 :root {
   color-scheme: dark;
-  /* px per pt — figures below are drawn to true scale */
+  /* px per pt — figures are drawn to true scale */
   --u: 2.5px;
   --tile-w: 40; --tile-h: 68; --icon: 40; --label: 12; --label-gap: 8; --pad: 8; --spacing: 0;
   --paint-mos: 36; --paint-min: 32;
 }
 body { background: #111827; color: #e5e7eb; font: 13px system-ui, sans-serif; margin: 24px auto; max-width: 900px; line-height: 1.5; }
 h1, h2 { color: #fff; }
-h2 { margin-top: 0; font-size: 15px; }
+h2 { margin: 0 0 12px; font-size: 15px; }
+h3 { margin: 20px 0 8px; font-size: 13px; color: #93c5fd; font-weight: 600; }
 a { color: #93c5fd; }
-.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px 30px; margin: 16px 0; }
+.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px 22px; margin: 16px 0; }
 .fig { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
-.figcol { display: flex; flex-direction: column; gap: 10px; }
+.figcol { display: flex; flex-direction: column; gap: 14px; }
 ul { margin: 8px 0; padding-left: 20px; }
 code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
 .live { color: #22c55e; }
 .scalenote { font-size: 11px; color: #6b7280; }
 
-/* ---- section 2: single tile, blown up (not to scale) ---- */
-.box-outer { border: 1px dashed #6b7280; background: #f59e0b22; padding: 26px 30px; position: relative; border-radius: 6px; }
+/* chips name the parts directly on the visual */
+.chip { position: absolute; z-index: 5; font: 11px ui-monospace, monospace; color: #93c5fd; background: #0b1220; border: 1px solid #1e3a8a; border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.chip.n { color: #cbd5e1; border-color: #475569; }
+.chip.g { color: #4ade80; border-color: #14532d; }
+.chip.y { color: #fde047; border-color: #713f12; }
+.chip.o { color: #fdba74; border-color: #7c2d12; }
+.gchip { top: 50%; transform: translateY(-50%); left: 10px; }
+.lchip { top: 50%; transform: translateY(-50%); right: 10px; }
+
+/* section 2: single tile, blown up (not to scale) */
+.box-outer { border: 1px dashed #6b7280; background: #f59e0b22; padding: 30px 34px; position: relative; border-radius: 6px; }
 .box-mid { border: 1px solid #9ca3af; padding: 18px 22px; position: relative; border-radius: 6px; }
-.box-icon { background: #22c55e33; border: 1px dashed #22c55e; padding: 26px 30px; text-align: center; border-radius: 4px; position: relative; }
-.box-label { background: #facc1533; border: 1px dashed #facc15; margin-top: 6px; padding: 4px; text-align: center; border-radius: 4px; position: relative; }
+.box-icon { background: #22c55e33; border: 1px dashed #22c55e; min-width: 340px; min-height: 150px; position: relative; border-radius: 4px; }
+.box-label { background: #facc1533; border: 1px dashed #facc15; margin-top: 6px; padding: 4px; position: relative; border-radius: 4px; }
+.box-icon > .chip { top: 8px; }
+.box-icon > .chip.slot { left: 10px; }
+.box-icon > .chip.badge { right: 10px; color: #86efac; border-color: #14532d; }
+.box-icon > .chip.indi { top: auto; bottom: 8px; left: 50%; transform: translateX(-50%); color: #e5e7eb; border-color: #475569; }
+.box-icon .dot { position: absolute; bottom: 32px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #e5e7eb; }
+.box-icon .bdot { position: absolute; top: 34px; right: 18px; width: 10px; height: 10px; border-radius: 50%; background: #4ade80; }
 .tag { position: absolute; font-size: 10px; color: #9ca3af; }
 
-/* ---- mini tile, drawn to true scale from the live snapshot ---- */
+/* mini tile, true scale from the live snapshot */
 .tl { position: relative; flex: none; width: calc(var(--tile-w) * var(--u)); height: calc(var(--tile-h) * var(--u)); }
 .tl .fr { position: absolute; inset: 0; border: 1px dashed #cbd5e1; border-radius: calc(2 * var(--u)); opacity: .7; z-index: 2; }
-.tl .ic {
-  position: absolute; top: calc(var(--pad) * var(--u)); left: 0; right: 0; margin: auto;
-  width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u));
-  border-radius: calc(6 * var(--u)); background: #60a5fa; flex: none;
-}
-.tl .lb {
-  position: absolute; bottom: 0; left: 0; right: 0; margin: auto;
-  width: calc(var(--icon) * var(--u)); height: calc(var(--label) * var(--u));
-  background: #facc15; opacity: .85; border-radius: calc(2 * var(--u));
-}
+.tl .ic { position: absolute; top: calc(var(--pad) * var(--u)); left: 0; right: 0; margin: auto; width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u)); border-radius: calc(6 * var(--u)); background: #60a5fa; }
+.tl .lb { position: absolute; bottom: 0; left: 0; right: 0; margin: auto; width: calc(var(--icon) * var(--u)); height: calc(var(--label) * var(--u)); background: #facc15; opacity: .85; border-radius: calc(2 * var(--u)); }
 .tl .lb.nolab { background: repeating-linear-gradient(45deg, #334155, #334155 4px, #1e293b 4px, #1e293b 8px); opacity: 1; }
 .tl .ic.run::after { content: ""; position: absolute; bottom: calc(-3 * var(--u)); left: 50%; width: calc(4 * var(--u)); height: calc(4 * var(--u)); margin-left: calc(-2 * var(--u)); border-radius: 50%; background: #e5e7eb; }
 
-/* section 1 bar */
-.barrow { display: flex; align-items: flex-start; background: #0b1220; border: 1px solid #374151; border-radius: 10px; padding: 26px 18px 30px; }
-.seg { display: flex; align-items: center; position: relative; }
-.seg > .mk { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; color: #9ca3af; }
-.dv { width: 1px; align-self: stretch; background: #6b7280; margin: 0 14px; position: relative; flex: none; }
-.dv > .mk { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; color: #6b7280; }
-.gapm { width: calc(var(--spacing) * var(--u)); align-self: stretch; position: relative; flex: none; }
+/* figure 1: the bar row */
+.barrow { position: relative; display: flex; align-items: flex-start; background: #0b1220; border: 1px solid #374151; border-radius: 10px; padding: 30px 18px 20px; }
+.barrow.brk { padding-bottom: 46px; }
+.barrow.gutter { padding-left: 104px; }
+.barrow.spacetop { padding-top: 52px; }
+.trow { display: flex; align-items: flex-end; }
+.tcell { display: flex; flex-direction: column; align-items: center; }
+.dimtop { position: relative; height: 22px; width: calc(var(--tile-w) * var(--u)); }
+.dimtop > .chip { top: 0; left: 50%; transform: translateX(-50%); }
+.dimtop::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-top: 1px solid #475569; }
+.gapm { position: relative; flex: none; width: calc(var(--spacing) * var(--u)); height: calc(var(--tile-h) * var(--u)); }
 .gapm::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; border-left: 1px dashed #1e3a8a; }
-.gapm > span { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 9px); white-space: nowrap; font: 11px ui-monospace, monospace; color: #93c5fd; background: #0b1220; border: 1px solid #1e3a8a; border-radius: 4px; padding: 1px 5px; }
+.gapm > .chip { top: -46px; left: 50%; transform: translateX(-50%); }
 
-/* section 3 captions */
-.cellwrap { display: flex; align-items: flex-start; }
-.cell { display: flex; flex-direction: column; align-items: center; }
-.cell .cap { margin-top: 10px; width: calc(var(--tile-w) * var(--u)); text-align: center; font-size: 11px; line-height: 1.25; color: #9ca3af; }
-.ic.folder { background: #ffffff26; border-radius: calc(4 * var(--u)); padding: calc(1.5 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(0.8 * var(--u)); }
+/* figure 1b: sections */
+.seg { display: flex; flex-direction: column; align-items: stretch; }
+.brk2 { position: relative; margin-top: 14px; height: 0; border-top: 1px solid #475569; }
+.brk2::before, .brk2::after { content: ""; position: absolute; top: 0; width: 1px; height: 6px; background: #475569; }
+.brk2::before { left: 0; } .brk2::after { right: 0; }
+.brk2 > .chip { top: 6px; left: 50%; transform: translateX(-50%); }
+.dvcol { display: flex; flex-direction: column; align-items: center; margin: 0 20px; }
+.dvcol .dv { width: 1px; height: calc(var(--tile-h) * var(--u)); background: #6b7280; }
+.dvcol .dvlab { position: relative; height: 27px; }
+.dvcol .dvlab > .chip { top: 6px; left: 50%; transform: translateX(-50%); }
+
+/* figure 4: special tiles as separate cards */
+.cards { display: grid; grid-template-columns: repeat(3, max-content); gap: 14px; }
+.card { border: 1px solid #374151; border-radius: 8px; background: #0b1220; padding: 10px 12px 12px; }
+.card .cname { font-size: 11px; color: #e5e7eb; text-align: center; margin-bottom: 8px; }
+.card .cnotes { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.card .cnotes .chip { position: static; transform: none; }
+.ic.folder { background: #ffffff33; border-radius: calc(4 * var(--u)); padding: calc(1.5 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(0.8 * var(--u)); }
 .ic.folder i { background: #34d399; border-radius: calc(1 * var(--u)); }
 .ic.min { background: #111827; border: 1px solid #374151; border-radius: calc(3 * var(--u)); }
-.ic.min .card { position: absolute; left: 50%; bottom: calc(1.2 * var(--u)); transform: translateX(-50%); width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); background: #a78bfa; border-radius: calc(1 * var(--u)); }
+.ic.min .card2 { position: absolute; left: 50%; bottom: calc(1.2 * var(--u)); transform: translateX(-50%); width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); background: #a78bfa; border-radius: calc(1 * var(--u)); }
 .ic.min .badge { position: absolute; right: 0; bottom: 0; width: calc(9 * var(--u)); height: calc(9 * var(--u)); border-radius: 50%; background: #60a5fa; border: 1px solid #0b1220; }
-.ic.min.ph .card { background: #6b7280; width: calc(var(--paint-min) * 0.58 * var(--u)); height: calc(var(--paint-min) * 0.5 * var(--u)); }
+.ic.min.ph .card2 { background: #6b7280; width: calc(var(--paint-min) * 0.58 * var(--u)); height: calc(var(--paint-min) * 0.5 * var(--u)); }
 .ic.lp { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(1 * var(--u)); padding: calc(1.5 * var(--u)); background: #ffffff1a; border-radius: calc(4 * var(--u)); }
 .ic.lp i { background: #f472b6; border-radius: calc(0.6 * var(--u)); }
 .ic.wid { height: calc(var(--icon) * 0.78 * var(--u)); background: #374151; border-radius: calc(3 * var(--u)); }
 .ic.spacer { background: repeating-linear-gradient(45deg, #1f2937, #1f2937 4px, #263141 4px, #263141 8px); border: 1px dashed #4b5563; }
 .ic.trash { background: #6b7280; }
 
-/* section 4: guides + slot/painted */
+/* figure 5: guides + slot/painted */
 .gbar { padding-left: 240px; }
 .trow.g { position: relative; display: flex; align-items: flex-start; }
 .gline { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed; z-index: 3; }
@@ -92,95 +117,153 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
 .pv .slot .in { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border: 1px solid #fb9231; border-radius: calc(2 * var(--u)); background: #fb92314d; }
 .pv .slot .in.mos { width: calc(var(--paint-mos) * var(--u)); height: calc(var(--paint-mos) * var(--u)); }
 .pv .slot .in.cd { width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); }
-.pv small { display: block; margin-top: 8px; font-size: 11px; color: #9ca3af; max-width: calc(var(--icon) * var(--u)); }
+.pv small { display: block; margin-top: 8px; font-size: 11px; color: #9ca3af; max-width: calc(var(--icon) * var(--u)); line-height: 1.35; }
 .pv small b { color: #fb9231; }
+.pv small .nm { color: #e5e7eb; }
 </style>
 </head>
 <body>
 <p><a href="/">← back to inspector</a></p>
 <h1>Anatomy of a Docky tile</h1>
-<p>Bottom dock, labels below — the default. Values marked <span class="live">● live</span> come from your running dock right now.</p>
+<p>Bottom dock, labels below — the default. Values marked <span class="live">● live</span> come from your running dock right now. Every box is drawn to true scale at <span id="u-note">2.5 px/pt</span>; figure 2 is a single tile blown up for legibility.</p>
 
 <div class="sec">
-<h2>1. Bar → sections → tiles</h2>
-<div class="fig">
-<div class="barrow">
-  <div class="seg">
-    <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
-    <div class="gapm"><span>spacing <b class="live" id="s-spacing">…</b></span></div>
-    <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    <span class="mk">pinned apps · <span class="live" id="s-apps">…</span></span>
-  </div>
-  <div class="dv"><span class="mk">divider</span></div>
-  <div class="seg">
-    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    <span class="mk">app folders · <span class="live" id="s-folders">…</span></span>
-  </div>
-  <div class="dv"><span class="mk">divider</span></div>
-  <div class="seg">
-    <div class="tl"><span class="fr"></span><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div>
-    <div class="tl"><span class="fr"></span><div class="ic trash"></div><div class="lb"></div></div>
-    <span class="mk">minimized + trash</span>
+<h2>1. The bar and its sections</h2>
+
+<h3>1a · One row of identical tiles</h3>
+<div class="barrow gutter spacetop">
+  <span class="chip n gchip">the bar</span>
+  <div class="trow">
+    <div class="tcell">
+      <div class="dimtop"><span class="chip n">tile frame <span class="live" id="a-tile">…</span></span></div>
+      <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
+    </div>
+    <div class="gapm"><span class="chip">spacing <span class="live" id="a-gap">…</span></span></div>
+    <div class="tcell">
+      <div class="dimtop"></div>
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    </div>
+    <div class="tcell">
+      <div class="dimtop"><span class="chip n">identical</span></div>
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    </div>
   </div>
 </div>
-<div>
 <ul>
-<li>The bar is one row of fixed-size tiles. <b>Sections</b> (pinned apps, app folders, minimized windows, trash) are runs of tile kinds separated by <b>dividers</b> — the inspector draws them as <em>section markers</em> under the bar.</li>
-<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>. The dashed marker above the bar sits exactly in that spacing — at <span class="live" id="s-spacing2">…</span> the frames touch.</li>
-<li>Your tile: <span class="live" id="s-tile">…</span> · total tiles: <span class="live" id="s-count">…</span> · every tile frame is identical (dividers excepted).</li>
-<li><code>H = pad + icon + pad + label row</code> — a taller label grows the tile, never the icon.</li>
+<li>The bar is a single horizontal run of <b>fixed-size tiles</b>. Every tile reserves the same frame — <span class="live" id="a-tile2">…</span> for all <span class="live" id="a-count">…</span> of them.</li>
+<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>. The dashed marker between the first two tiles sits exactly in that spacing — at <span class="live" id="a-gap2">…</span> the frames touch.</li>
+<li>With labels on, <code>H = pad + icon + pad + label row</code>: a taller label grows the tile, never the icon.</li>
 </ul>
-<p class="scalenote">Figures 1, 3 and 4 are drawn to true scale at <span id="u-note">2.5 px/pt</span>; figure 2 is a single tile blown up for legibility.</p>
+
+<h3>1b · Sections are runs of tiles, split by dividers</h3>
+<div class="barrow brk gutter">
+  <span class="chip n gchip">the bar</span>
+  <div class="seg">
+    <div class="trow">
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    </div>
+    <div class="brk2"><span class="chip n">section · pinned apps <span class="live" id="b-apps">…</span></span></div>
+  </div>
+  <div class="dvcol">
+    <div class="dv"></div>
+    <div class="dvlab"><span class="chip">divider</span></div>
+  </div>
+  <div class="seg">
+    <div class="trow">
+      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+    </div>
+    <div class="brk2"><span class="chip n">section · app folders <span class="live" id="b-folders">…</span></span></div>
+  </div>
+  <div class="dvcol">
+    <div class="dv"></div>
+    <div class="dvlab"><span class="chip">divider</span></div>
+  </div>
+  <div class="seg">
+    <div class="trow">
+      <div class="tl"><span class="fr"></span><div class="ic min"><span class="card2"></span><span class="badge"></span></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic trash"></div><div class="lb"></div></div>
+    </div>
+    <div class="brk2"><span class="chip n">section · minimized + trash</span></div>
+  </div>
 </div>
-</div>
+<ul>
+<li>A <b>section</b> is a run of tile kinds. The inspector groups tiles into sections and draws a marker under each — the brackets here.</li>
+<li>A <b>divider</b> separates two sections. It is not a tile: no frame, no icon, no label row.</li>
+<li>Your dock right now: <span class="live" id="b-apps2">…</span> app tiles, <span class="live" id="b-folders2">…</span> app-folder tiles, <span class="live" id="b-total">…</span> tiles in total.</li>
+</ul>
 </div>
 
 <div class="sec">
 <h2>2. Inside one tile</h2>
 <div class="fig">
-<div class="box-outer"><span class="tag" style="top:2px;left:4px">tile frame <span class="live" id="d-frame">…</span></span>
-<div class="box-mid"><span class="tag" style="top:2px;left:4px">paddings <span class="live" id="d-pad">…</span></span>
-<div class="box-icon">icon slot <span class="live" id="d-icon">…</span></div>
-<div class="box-label">label row <span class="live" id="d-label">…</span></div>
-</div>
+<div class="box-outer">
+  <span class="chip n" style="top:6px;left:10px">tile frame <span class="live" id="d-frame">…</span></span>
+  <span class="chip n" style="top:6px;right:10px">overlays: no layout space</span>
+  <div class="box-mid"><span class="tag" style="top:2px;left:4px">paddings <span class="live" id="d-pad">…</span></span>
+  <div class="box-icon">
+    <span class="chip g slot">icon slot <span class="live" id="d-icon">…</span></span>
+    <span class="chip badge">notification badge</span>
+    <span class="bdot"></span>
+    <span class="dot"></span>
+    <span class="chip indi">running indicator</span>
+  </div>
+  <div class="box-label"><span class="chip y" style="top:2px;left:10px">label row <span class="live" id="d-label">…</span></span></div>
+  </div>
 </div>
 <div>
 <ul>
-<li><b>Tile frame</b> — the layout box every tile reserves. All frames in one bar are identical (dividers excepted).</li>
-<li><b>Paddings</b> — <code>vPad</code> on the cross axis (top+bottom here), <code>iconPad</code> all around. Empty space, no visuals.</li>
+<li><b>Tile frame</b> — the layout box every tile reserves. Identical for all tiles in a bar.</li>
+<li><b>Paddings</b> — <code>vPad</code> on the cross axis (above the icon, and between icon and label), <code>iconPad</code> all around. Empty space, no visuals.</li>
 <li><b>Icon slot</b> — the icon's layout box. The <em>painted</em> artwork inside can be smaller: app icons carry transparency, folder mosaics render at ~0.36 minis, minimized cards at 0.8.</li>
 <li><b>Label row</b> — fixed height from the font size (<code>ceil(font×1.2)+2</code>), text truncated with a 2pt side inset so neighbors never touch.</li>
-<li><b>Overlays</b> — running indicator (dot/pill, shifted past the label when they share an edge) and notification badge float above; they never take layout space.</li>
+<li><b>Overlays</b> — running indicator and notification badge float above the tile; they never take layout space.</li>
 </ul>
 </div>
 </div>
 </div>
 
 <div class="sec">
-<h2>3. Special tiles</h2>
-<div class="fig">
-<div class="barrow">
-  <div class="cellwrap">
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div><div class="cap">App folder</div></div>
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div><div class="cap">Minimized window</div></div>
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic min ph"><span class="card"></span></div><div class="lb"></div></div><div class="cap">Placeholder card</div></div>
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic lp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="lb"></div></div><div class="cap">Launchpad</div></div>
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic wid"></div><div class="lb"></div></div><div class="cap">Widget</div></div>
-    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic spacer"></div><div class="lb nolab"></div></div><div class="cap">Spacer</div></div>
+<h2>3. Special tiles — one card per kind</h2>
+<div class="cards">
+  <div class="card">
+    <div class="cname">App folder</div>
+    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+    <div class="cnotes"><span class="chip n">background hugs the mosaic</span><span class="chip">6% chrome margin</span></div>
+  </div>
+  <div class="card">
+    <div class="cname">Minimized window</div>
+    <div class="tl"><span class="fr"></span><div class="ic min"><span class="card2"></span><span class="badge"></span></div><div class="lb"></div></div>
+    <div class="cnotes"><span class="chip o">preview card = 0.8</span><span class="chip n">app badge on corner</span></div>
+  </div>
+  <div class="card">
+    <div class="cname">Minimized, no permission</div>
+    <div class="tl"><span class="fr"></span><div class="ic min ph"><span class="card2"></span></div><div class="lb"></div></div>
+    <div class="cnotes"><span class="chip n">fallback symbol, same slot</span></div>
+  </div>
+  <div class="card">
+    <div class="cname">Launchpad / Start Menu</div>
+    <div class="tl"><span class="fr"></span><div class="ic lp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+    <div class="cnotes"><span class="chip n">fixed bundle id</span><span class="chip">icon overridable</span></div>
+  </div>
+  <div class="card">
+    <div class="cname">Widget</div>
+    <div class="tl"><span class="fr"></span><div class="ic wid"></div><div class="lb"></div></div>
+    <div class="cnotes"><span class="chip n">never labeled, but keeps the label row</span></div>
+  </div>
+  <div class="card">
+    <div class="cname">Spacer</div>
+    <div class="tl"><span class="fr"></span><div class="ic spacer"></div><div class="lb nolab"></div></div>
+    <div class="cnotes"><span class="chip n">no label row at all</span></div>
   </div>
 </div>
-<div>
 <ul>
-<li><b>App folder</b> — the material background hugs the 2×2 mosaic (not the slot), with a 6% chrome margin, so folders keep breathing room like transparency gives app icons. Stack mode fans full-size icons instead.</li>
-<li><b>Minimized window</b> — a 0.8 preview card plus the owning app's badge icon on the corner.</li>
-<li><b>No screen-recording permission</b> — the card falls back to a smaller placeholder symbol in the same slot.</li>
-<li><b>Launchpad / Start Menu</b> — ordinary app tiles pointed at a fixed bundle id with an overridable icon (drawn as a mini grid).</li>
-<li><b>Widgets, spacers, dividers</b> — never labeled; widgets reserve the label row anyway so rows stay aligned.</li>
+<li>Every kind keeps the same tile frame, so rows stay aligned even when the artwork differs.</li>
+<li><b>App folder</b> — the material background hugs the 2×2 mosaic rather than the slot, with a 6% chrome margin, so folders keep the breathing room that transparency gives app icons. Stack mode fans full-size icons instead.</li>
+<li><b>Minimized window</b> — a 0.8 preview card plus the owning app's badge icon; without screen-recording permission the card falls back to a smaller placeholder symbol in the same slot.</li>
+<li><b>Launchpad / Start Menu</b> — ordinary app tiles pointed at a fixed bundle id with an overridable icon (drawn here as a mini grid).</li>
 </ul>
-</div>
-</div>
 </div>
 
 <div class="sec">
@@ -200,9 +283,9 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
     </div>
   </div>
   <div class="pair">
-    <div class="pv"><div class="slot"><em>🧊</em></div><small>app icon<br><b>slot = painted</b><br>gap = transparency</small></div>
-    <div class="pv"><div class="slot"><em style="opacity:.3">🧊</em><div class="in mos"></div></div><small>folder mosaic<br>painted <b id="p-mos">…</b> in a <span id="p-slot">…</span> slot</small></div>
-    <div class="pv"><div class="slot"><em style="opacity:.3">🪟</em><div class="in cd"></div></div><small>minimized card<br>painted <b id="p-min">…</b> in a <span id="p-slot2">…</span> slot</small></div>
+    <div class="pv"><div class="slot"><em>🧊</em></div><small><span class="nm">App icon</span><br><b>slot = painted</b><br>gap = transparency</small></div>
+    <div class="pv"><div class="slot"><em style="opacity:.3">🧊</em><div class="in mos"></div></div><small><span class="nm">Folder mosaic</span><br>painted <b id="p-mos">…</b><br>in a <span id="p-slot">…</span> slot</small></div>
+    <div class="pv"><div class="slot"><em style="opacity:.3">🪟</em><div class="in cd"></div></div><small><span class="nm">Minimized card</span><br>painted <b id="p-min">…</b><br>in a <span id="p-slot2">…</span> slot</small></div>
   </div>
 </div>
 <div>
@@ -223,8 +306,8 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
     const t = d.tiles.find((x) => x.kind === "app") ?? d.tiles[0];
     const row = Math.ceil(d.fontSize * 1.2) + 2;
     const pad = d.padding?.v ?? 0;
-    const root = document.documentElement.style;
     const u = Number(getComputedStyle(document.documentElement).getPropertyValue("--u").replace("px", "")) || 2.5;
+    const root = document.documentElement.style;
     root.setProperty("--u", `${u}px`);
     root.setProperty("--tile-w", String(t.w));
     root.setProperty("--tile-h", String(t.h));
@@ -245,12 +328,16 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
     set("p-min", min ? `${r1(min.paintM[0])}×${r1(min.paintM[1])}pt` : "…");
     set("p-slot", `${t.w}pt`);
     set("p-slot2", `${t.w}pt`);
-    set("s-spacing", `${d.spacing}pt`);
-    set("s-spacing2", `${d.spacing}pt`);
-    set("s-tile", `${t.w}×${t.h}pt`);
-    set("s-count", String(d.tiles.length));
-    set("s-apps", String(n("app")));
-    set("s-folders", String(n("appFolder")));
+    set("a-tile", `${t.w}×${t.h}pt`);
+    set("a-tile2", `${t.w}×${t.h}pt`);
+    set("a-gap", `${d.spacing}pt`);
+    set("a-gap2", `${d.spacing}pt spacing`);
+    set("a-count", String(d.tiles.length));
+    set("b-apps", String(n("app")));
+    set("b-folders", String(n("appFolder")));
+    set("b-apps2", String(n("app")));
+    set("b-folders2", String(n("appFolder")));
+    set("b-total", String(d.tiles.length));
     set("d-frame", `${t.w}×${t.h}pt`);
     set("d-pad", `v ${pad}pt`);
     set("d-icon", `${t.w}×${t.h - 2 * pad - row}pt`);
