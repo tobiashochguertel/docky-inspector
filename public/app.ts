@@ -42,6 +42,7 @@ const VIEW_TOGGLES = [
   { id: "v-sections", label: "section markers", on: true },
   { id: "v-padding", label: "padding boxes", on: true },
   { id: "v-gaps", label: "gap labels", on: false },
+  { id: "v-numbers", label: "tile numbers", on: true },
 ] as const;
 
 type ViewId = (typeof VIEW_TOGGLES)[number]["id"];
@@ -51,6 +52,7 @@ const view: Record<ViewId, boolean> = {
   "v-sections": true,
   "v-padding": true,
   "v-gaps": false,
+  "v-numbers": true,
 };
 
 let lastSig = "";
@@ -144,6 +146,7 @@ function renderBar(data: LayoutSnapshot, changed: string[], added: string[]): vo
           : "";
       return (
         `<div class="tile${flag}" data-i="${i}" style="left:${x.toFixed(1)}px;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px" title="${esc(t.id)}">` +
+        (view["v-numbers"] ? `<span class="idx">${i + 1}</span>` : "") +
         iconInner +
         `<div class="tlabel" style="height:${rowPx}px;font-size:${fontPx}px">${name}</div>` +
         padBox +
@@ -279,6 +282,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ["gap → next", gapNext],
     ])) +
     group("Tile", true, rows([
+      ["#", `${i + 1} of ${tiles.length}`],
       ["id", t.id],
       ["kind", t.kind],
       ["section", sectionOf(t.kind)],
