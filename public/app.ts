@@ -222,9 +222,51 @@ function applyGuideVisibility(): void {
 
 function selectTile(tiles: LayoutTile[], i: number): void {
   document.querySelectorAll(".tile").forEach((e) => e.classList.remove("sel"));
-  document.querySelector(`.tile[data-i="${i}"]`)?.classList.add("sel");
+  document.querySelectorAll(".xray").forEach((e) => e.remove());
+  const node = document.querySelector(`.tile[data-i="${i}"]`);
+  node?.classList.add("sel");
+  const t = tiles[i];
+  if (node && lastMeta) renderXray(node as HTMLElement, t);
   document.getElementById("metrics")!.innerHTML = tileInspector(tiles, i);
   wireGroups();
+}
+
+/** Draws the icon/label boxes with per-side gap values onto the
+ *  selected tile, so the space between icon and tile edge is readable
+ *  in place. Icon is smaller than the tile — the gaps are the point. */
+function renderXray(tileEl: HTMLElement, t: LayoutTile): void {
+  const meta = lastMeta;
+  if (!meta) return;
+  const els = elementBoxes(t, meta);
+  const f = (n: number): string => (Math.round(n * 10) / 10).toString();
+  const box = (
+    r: { x: number; y: number; w: number; h: number },
+    m: { t: number; r: number; b: number; l: number },
+    cls: string,
+  ): string =>
+    `<div class="xray ${cls}" style="left:${r.x * SCALE}px;top:${r.y * SCALE}px;width:${r.w * SCALE}px;height:${r.h * SCALE}px">` +
+    `<span class="xtag" style="top:-1px;left:50%;transform:translate(-50%,-100%)">${f(m.t)}</span>` +
+    `<span class="xtag" style="right:-1px;top:50%;transform:translate(100%,-50%)">${f(m.r)}</span>` +
+    `<span class="xtag" style="bottom:-1px;left:50%;transform:translate(-50%,100%)">${f(m.b)}</span>` +
+    `<span class="xtag" style="left:-1px;top:50%;transform:translate(-100%,-50%)">${f(m.l)}</span></div>`;
+  const iw = els.icon.content[0];
+  const ih = els.icon.content[1];
+  const iconR = { x: els.icon.margin.l, y: els.icon.margin.t, w: iw, h: ih };
+  let html = box(iconR, els.icon.margin, "x-icon");
+  if (t.paintM && (Math.abs(t.paintM[0] - iw) > 0.5 || Math.abs(t.paintM[1] - ih) > 0.5)) {
+    const pw = t.paintM[0];
+    const ph = t.paintM[1];
+    const px = iconR.x + (iw - pw) / 2;
+    const py = iconR.y + (ih - ph) / 2;
+    html += `<div class="xray x-paint" title="painted ${f(pw)}×${f(ph)}" style="left:${px * SCALE}px;top:${py * SCALE}px;width:${pw * SCALE}px;height:${ph * SCALE}px"></div>`;
+  }
+  if (els.title) {
+    const tw = els.title.content[0];
+    const th = els.title.content[1];
+    const labelR = { x: els.title.margin.l, y: els.title.margin.t, w: tw, h: th };
+    html += box(labelR, els.title.margin, "x-label");
+  }
+  tileEl.insertAdjacentHTML("beforeend", html);
 }
 
 const GROUP_STATE_KEY = "docky-inspector-groups";

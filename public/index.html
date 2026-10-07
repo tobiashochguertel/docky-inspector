@@ -11,6 +11,11 @@ body { background: #111827; color: #e5e7eb; font: 12px system-ui, sans-serif; ma
 .tile .icon { display: flex; align-items: center; justify-content: center; color: #fff; opacity: .9; border-radius: 4px; overflow: hidden; }
 .tile .kind { font-size: 9px; opacity: .8; }
 .tile .idx { position: absolute; top: 1px; left: 2px; font: 9px ui-monospace, monospace; color: #fff; background: #000000aa; border-radius: 3px; padding: 0 3px; pointer-events: none; z-index: 2; }
+.xray { position: absolute; pointer-events: none; box-sizing: border-box; z-index: 3; }
+.xray.x-icon { border: 1px dashed #22c55e; }
+.xray.x-label { border: 1px dashed #facc15; }
+.xray.x-paint { border: 1px solid #fb9231; }
+.xtag { position: absolute; font: 8px ui-monospace, monospace; color: #fff; background: #000000bb; border-radius: 3px; padding: 0 3px; white-space: nowrap; }
 .tile .tlabel { color: #fff; text-align: center; white-space: nowrap; overflow: hidden; line-height: 1.1; opacity: .9; }
 .tile.changed { outline: 2px solid #fb9231; }
 .tile.added { outline: 2px solid #22c55e; }
