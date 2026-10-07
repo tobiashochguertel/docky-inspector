@@ -146,7 +146,7 @@ function renderBar(data: LayoutSnapshot, changed: string[], added: string[]): vo
                 : null;
       const iconInner =
         view["v-icons"] && iconSrc
-          ? `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><img src="${iconSrc}" style="width:100%;height:100%;object-fit:contain${t.kind === "min" ? ";opacity:.75" : ""}" onerror="this.remove()" alt=""><span class="kind">${esc(t.kind)}</span></div>`
+          ? `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><img src="${iconSrc}" style="width:100%;height:100%;object-fit:contain${t.kind === "min" ? ";opacity:.75" : ""}" onload="this.nextElementSibling.style.display='none'" onerror="this.remove()" alt=""><span class="kind">${esc(t.kind)}</span></div>`
           : `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><span class="kind">${esc(t.kind)}</span></div>`;
       const padBox =
         view["v-padding"] && pad.v > 0

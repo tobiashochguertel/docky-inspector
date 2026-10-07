@@ -62,7 +62,6 @@ func drawMosaic(_ bundleIDs: [String], side: Int, to outPath: String) {
     let gap = CGFloat(side) * 0.06
     let cell = (CGFloat(side) - gap * 3) / 2
     for (index, bid) in bundleIDs.prefix(4).enumerated() {
-        guard let icon = iconImage(for: bid) else { continue }
         let col = index % 2
         let row = index / 2
         let rect = NSRect(
@@ -71,7 +70,13 @@ func drawMosaic(_ bundleIDs: [String], side: Int, to outPath: String) {
             width: cell,
             height: cell
         )
-        icon.draw(in: rect, from: NSRect.zero, operation: .sourceOver, fraction: 1.0)
+        if let icon = iconImage(for: bid) {
+            icon.draw(in: rect, from: NSRect.zero, operation: .sourceOver, fraction: 1.0)
+        } else {
+            // Unresolvable app: light placeholder like Docky's grid shows.
+            NSColor(white: 0.85, alpha: 1.0).setFill()
+            NSBezierPath(roundedRect: rect, xRadius: cell * 0.22, yRadius: cell * 0.22).fill()
+        }
     }
     canvas.unlockFocus()
     writePNG(canvas, side: side, to: outPath)

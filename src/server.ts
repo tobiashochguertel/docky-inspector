@@ -79,7 +79,7 @@ async function mosaicIcon(bids: string[]): Promise<string | null> {
   if (list.length === 0) return null;
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(list.join(","));
-  const key = `mosaic-${hasher.digest("hex").slice(0, 12)}@${ICON_SIZE}.png`;
+  const key = `mosaic2-${hasher.digest("hex").slice(0, 12)}@${ICON_SIZE}.png`;
   const cached = join(ICON_CACHE, key);
   if (await Bun.file(cached).exists()) return cached;
   const helper = await ensureIconHelper();
