@@ -243,22 +243,25 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
   const padLeft = vertical ? vPad : 0;
   const padRight = vertical ? vPad : 0;
   const f = (n: number): string => (Math.round(n * 10) / 10).toString();
+  const mTop = vertical ? mBefore : 0;
+  const mBottom = vertical ? mAfter : 0;
+  const mLeft = vertical ? 0 : mBefore;
+  const mRight = vertical ? 0 : mAfter;
+  const sides = (t: number, r: number, b: number, l: number): string =>
+    `<span class="bm-v" style="top:2px">${f(t)}</span>` +
+    `<span class="bm-h" style="right:2px">${f(r)}</span>` +
+    `<span class="bm-v" style="bottom:2px">${f(b)}</span>` +
+    `<span class="bm-h" style="left:2px">${f(l)}</span>`;
   const box = `
     <div class="bm"><div class="bm-margin"><span class="bm-tag">margin</span>
-      <span class="bm-v" style="top:1px">${f(vertical ? mBefore : 0)}</span>
-      <div class="bm-border"><span class="bm-tag">border ${f(0)}</span>
+      ${sides(mTop, mRight, mBottom, mLeft)}
+      <div class="bm-border"><span class="bm-tag">border</span>
+        ${sides(0, 0, 0, 0)}
         <div class="bm-padding"><span class="bm-tag">padding</span>
-          <span class="bm-v" style="top:1px">${f(padTop)}</span>
-          <span class="bm-h" style="left:2px">${f(padLeft)}</span>
+          ${sides(padTop, padRight, padBottom, padLeft)}
           <div class="bm-content">${f(t.w)}×${f(t.h)}</div>
-          <span class="bm-h" style="right:2px">${f(padRight)}</span>
-          <span class="bm-v" style="bottom:1px">${f(padBottom)}</span>
         </div>
       </div>
-      <span class="bm-v" style="bottom:1px">${f(vertical ? mAfter : 0)}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:2px">
-      <span>◀ ${f(mBefore)}</span><span>${f(mAfter)} ▶</span>
     </div></div>`;
   const gapNext = next ? `${gapBetween(t, next).toFixed(1)}pt` : "—";
   const rows = (pairs: [string, string][]): string =>
