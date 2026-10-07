@@ -29,6 +29,9 @@ bun run dev      # serves http://127.0.0.1:8901/ (set PORT= to change)
 - Toggleable alignment guides (tile top, icon bottom, label baseline ≈, tile bottom)
 - Click any tile for id, kind, size, center, label, gap-to-next
 - Snapshot history with changed/added/removed highlighting; click to view read-only
+- Section markers (pinned apps, app folders, minimized, trailing)
+- Real app icons on demand (Spotlight + QuickLook, cached), padding boxes,
+  and per-gap labels as toggles
 - Uniformity verdicts (heights, gaps, missing labels) computed from the same
   shared code (`src/layout.ts`) on both server and client
 - JSON API for agents/scripts: `GET /api/layout`, `GET /api/history`,

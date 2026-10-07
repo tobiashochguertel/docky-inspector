@@ -27,6 +27,8 @@ export interface LayoutSnapshot {
   scale: number;
   placement: string;
   fontSize: number;
+  /** Rendered paddings in pt: v = cross-axis content padding, icon = icon inset. */
+  padding: { v: number; icon: number };
   tiles: LayoutTile[];
 }
 

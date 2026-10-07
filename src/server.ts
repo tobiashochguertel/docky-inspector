@@ -11,6 +11,8 @@ import { diffTiles, judge, type LayoutSnapshot, type LayoutTile } from "./layout
 const SNAPSHOT = join(homedir(), "Library/Logs/Docky/docky-layout.json");
 const PORT = Number(process.env.PORT ?? 8901);
 const HISTORY_LIMIT = 30;
+const ICON_CACHE = join(import.meta.dir, "..", ".icon-cache");
+const ICON_SIZE = 256;
 
 interface HistoryEntry {
   id: number;
@@ -23,6 +25,99 @@ let lastMtime = 0;
 let prevTiles: LayoutTile[] = [];
 let history: HistoryEntry[] = [];
 let nextHistoryId = 1;
+
+/** Bundle id from a dock tile id ("pinned:app:<bid>" or "pinned:<bid>"). */
+function bundleIdFromTileId(id: string): string | null {
+  if (!id.startsWith("pinned:")) return null;
+  const rest = id.slice("pinned:".length);
+  const bid = rest.startsWith("app:") ? rest.slice("app:".length) : rest;
+  return /^[A-Za-z0-9.\-]+$/.test(bid) ? bid : null;
+}
+
+async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<{ stdout: string } | null> {
+  try {
+    const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "ignore" });
+    const timer = setTimeout(() => {
+      try {
+        proc.kill();
+      } catch {
+        /* already exited */
+      }
+    }, timeoutMs);
+    const stdout = await new Response(proc.stdout).text();
+    clearTimeout(timer);
+    await proc.exited;
+    return { stdout };
+  } catch {
+    return null;
+  }
+}
+
+/** Real app icon PNG via the bundle's .icns (sips), cached forever. Null when unresolvable. */
+async function appIcon(bid: string): Promise<string | null> {
+  const safe = `${bid.replace(/[^A-Za-z0-9.\-]/g, "_")}@${ICON_SIZE}.png`;
+  const cached = join(ICON_CACHE, safe);
+  if (await Bun.file(cached).exists()) return cached;
+  const found = await runWithTimeout(["mdfind", `kMDItemCFBundleIdentifier == '${bid}'`], 15000);
+  const appPath = found?.stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l.endsWith(".app"));
+  if (!appPath) return null;
+  const plist = await runWithTimeout(
+    ["/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIconFile", join(appPath, "Contents", "Info.plist")],
+    5000,
+  );
+  const resources = join(appPath, "Contents", "Resources");
+  const candidates: string[] = [];
+  const named = plist?.stdout.trim();
+  if (named) {
+    candidates.push(join(resources, named), join(resources, `${named}.icns`));
+  }
+  const glob = new Bun.Glob("*.icns");
+  for await (const name of glob.scan({ cwd: resources })) {
+    candidates.push(join(resources, name));
+  }
+  const icns = await (async () => {
+    for (const c of candidates) {
+      if (await Bun.file(c).exists()) return c;
+    }
+    return null;
+  })();
+  if (!icns) return null;
+  await Bun.$`mkdir -p ${ICON_CACHE}`.quiet();
+  const converted = await runWithTimeout(
+    ["sips", "-Z", String(ICON_SIZE), "-s", "format", "png", icns, "--out", cached],
+    15000,
+  );
+  if (!converted || !(await Bun.file(cached).exists())) return null;
+  return cached;
+}
+
+/** System artwork for non-app tiles (trash, generic folder). */
+async function systemIcon(kind: string): Promise<string | null> {
+  const safe = `system-${kind}@${ICON_SIZE}.png`;
+  const cached = join(ICON_CACHE, safe);
+  if (await Bun.file(cached).exists()) return cached;
+  const source =
+    kind === "trash"
+      ? "/System/Library/CoreServices/Dock.app/Contents/Resources/trashempty.png"
+      : kind === "folder"
+        ? "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericFolderIcon.icns"
+        : null;
+  if (!source || !(await Bun.file(source).exists())) return null;
+  await Bun.$`mkdir -p ${ICON_CACHE}`.quiet();
+  if (source.endsWith(".icns")) {
+    const converted = await runWithTimeout(
+      ["sips", "-Z", String(ICON_SIZE), "-s", "format", "png", source, "--out", cached],
+      15000,
+    );
+    if (!converted || !(await Bun.file(cached).exists())) return null;
+  } else {
+    await Bun.write(cached, Bun.file(source));
+  }
+  return cached;
+}
 
 async function readSnapshot(): Promise<{ data: LayoutSnapshot; mtime: number } | null> {
   const file = Bun.file(SNAPSHOT);
@@ -56,6 +151,23 @@ const server = Bun.serve({
       }
       return new Response(await built.outputs[0].text(), {
         headers: { "Content-Type": "text/javascript; charset=utf-8" },
+      });
+    }
+    if (url.pathname === "/api/icon") {
+      const id = url.searchParams.get("id") ?? "";
+      const kind = url.searchParams.get("kind") ?? "";
+      let png: string | null = null;
+      if (kind === "app") {
+        const bid = bundleIdFromTileId(id);
+        if (bid) png = await appIcon(bid);
+      } else if (kind === "trash" || kind === "folder") {
+        png = await systemIcon(kind);
+      } else {
+        return new Response("no resolvable icon for this kind", { status: 404 });
+      }
+      if (!png) return new Response("icon not found", { status: 404 });
+      return new Response(Bun.file(png), {
+        headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
       });
     }
     if (url.pathname === "/api/history") {
