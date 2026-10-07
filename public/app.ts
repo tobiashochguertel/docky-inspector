@@ -56,6 +56,22 @@ const view: Record<ViewId, boolean> = {
 let lastSig = "";
 let viewSnapshotId: number | null = null;
 
+interface InspectorMeta {
+  position: string;
+  fontSize: number;
+  placement: string;
+  tileW: number;
+  tileH: number;
+  spacing: number;
+  scale: number;
+  vPad: number;
+  iconPad: number;
+  mtime: string;
+}
+
+let lastMeta: InspectorMeta | null = null;
+let lastTotalW = 0;
+
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
@@ -88,6 +104,19 @@ function renderBar(data: LayoutSnapshot, changed: string[], added: string[]): vo
   const vertical = data.position === "left" || data.position === "right";
   const minC = Math.min(...tiles.map((t) => t.c - t.w / 2));
   const totalW = (Math.max(...tiles.map((t) => t.c + t.w / 2)) - minC) * SCALE;
+  lastTotalW = totalW / SCALE;
+  lastMeta = {
+    position: data.position,
+    fontSize: data.fontSize,
+    placement: data.placement,
+    tileW: data.tile[0],
+    tileH: data.tile[1],
+    spacing: data.spacing,
+    scale: data.scale,
+    vPad: data.padding?.v ?? 0,
+    iconPad: data.padding?.icon ?? 0,
+    mtime: lastMeta?.mtime ?? "",
+  };
   const maxH = Math.max(...tiles.map((t) => t.h)) * SCALE;
   const rowPx = row * SCALE;
   const fontPx = data.fontSize * SCALE;
@@ -181,14 +210,109 @@ function applyGuideVisibility(): void {
 function selectTile(tiles: LayoutTile[], i: number): void {
   document.querySelectorAll(".tile").forEach((e) => e.classList.remove("sel"));
   document.querySelector(`.tile[data-i="${i}"]`)?.classList.add("sel");
+  document.getElementById("metrics")!.innerHTML = tileInspector(tiles, i);
+  wireGroups();
+}
+
+const GROUP_STATE_KEY = "docky-inspector-groups";
+
+function groupOpen(name: string, fallback: boolean): boolean {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GROUP_STATE_KEY) ?? "{}") as Record<string, boolean>;
+    return name in saved ? saved[name] : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** DevTools-style box model + grouped properties for one tile. */
+function tileInspector(tiles: LayoutTile[], i: number): string {
   const t = tiles[i];
-  const n = tiles[i + 1];
-  const gap = n ? `${gapBetween(t, n).toFixed(1)}pt` : "—";
-  document.getElementById("metrics")!.textContent =
-    `id: ${t.id}\nkind: ${t.kind}\nw×h: ${t.w}×${t.h}\ncenter: ${t.c}\nlabel: ${t.label || "(none)"}\ngap→next: ${gap}`;
+  const meta = lastMeta;
+  const prev = tiles[i - 1];
+  const next = tiles[i + 1];
+  const x0 = t.c - t.w / 2;
+  const x1 = t.c + t.w / 2;
+  const mBefore = prev ? x0 - (prev.c + prev.w / 2) : x0;
+  const mAfter = next ? next.c - next.w / 2 - x1 : lastTotalW - x1;
+  const vertical = meta ? meta.position === "left" || meta.position === "right" : false;
+  const vPad = meta?.vPad ?? 0;
+  const row = meta ? labelRowHeight(meta.fontSize) : 0;
+  const padTop = vertical ? 0 : vPad;
+  const padBottom = vertical ? 0 : vPad;
+  const padLeft = vertical ? vPad : 0;
+  const padRight = vertical ? vPad : 0;
+  const f = (n: number): string => (Math.round(n * 10) / 10).toString();
+  const box = `
+    <div class="bm"><div class="bm-margin"><span class="bm-tag">margin</span>
+      <span class="bm-v" style="top:1px">${f(vertical ? mBefore : 0)}</span>
+      <div class="bm-border"><span class="bm-tag">border ${f(0)}</span>
+        <div class="bm-padding"><span class="bm-tag">padding</span>
+          <span class="bm-v" style="top:1px">${f(padTop)}</span>
+          <span class="bm-h" style="left:2px">${f(padLeft)}</span>
+          <div class="bm-content">${f(t.w)}×${f(t.h)}</div>
+          <span class="bm-h" style="right:2px">${f(padRight)}</span>
+          <span class="bm-v" style="bottom:1px">${f(padBottom)}</span>
+        </div>
+      </div>
+      <span class="bm-v" style="bottom:1px">${f(vertical ? mAfter : 0)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:2px">
+      <span>◀ ${f(mBefore)}</span><span>${f(mAfter)} ▶</span>
+    </div></div>`;
+  const gapNext = next ? `${gapBetween(t, next).toFixed(1)}pt` : "—";
+  const rows = (pairs: [string, string][]): string =>
+    `<dl>${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+  const group = (name: string, fallback: boolean, inner: string): string =>
+    `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
+  return (
+    box +
+    `<div class="props">` +
+    group("Box", true, rows([
+      ["frame", `${f(x0)} … ${f(x1)} (w ${f(t.w)}, h ${f(t.h)})`],
+      ["center", `${f(t.c)}`],
+      ["margin before / after", `${f(mBefore)} / ${f(mAfter)}pt`],
+      ["padding v / icon", `${f(vPad)} / ${f(meta?.iconPad ?? 0)}pt`],
+      ["gap → next", gapNext],
+    ])) +
+    group("Tile", true, rows([
+      ["id", t.id],
+      ["kind", t.kind],
+      ["section", sectionOf(t.kind)],
+    ])) +
+    group("Label", true, rows([
+      ["text", t.label || "(none)"],
+      ["placement", meta?.placement ?? "?"],
+      ["font size", `${meta?.fontSize ?? 0}pt`],
+      ["row height", `${f(row)}pt`],
+    ])) +
+    group("Dock", false, rows([
+      ["position", meta?.position ?? "?"],
+      ["base tile", meta ? `${meta.tileW}×${meta.tileH}` : "?"],
+      ["spacing / scale", `${meta?.spacing ?? "?"} / ${meta?.scale ?? "?"}`],
+      ["snapshot", meta?.mtime ?? "?"],
+    ])) +
+    `</div>`
+  );
+}
+
+/** Collapse state persists across re-renders. */
+function wireGroups(): void {
+  document.querySelectorAll<HTMLDetailsElement>("#metrics details[data-group]").forEach((d) => {
+    d.ontoggle = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(GROUP_STATE_KEY) ?? "{}") as Record<string, boolean>;
+        saved[d.dataset.group!] = d.open;
+        localStorage.setItem(GROUP_STATE_KEY, JSON.stringify(saved));
+      } catch {
+        /* private mode */
+      }
+    };
+  });
 }
 
 function renderMeta(env: Envelope): void {
+  if (lastMeta) lastMeta = { ...lastMeta, mtime: env.mtime };
   const v = env.verdicts;
   document.getElementById("verdicts")!.innerHTML =
     `heights: <span class="${v.heightsOk ? "verdict-ok" : "verdict-bad"}">${esc(v.heights)}</span> · ` +

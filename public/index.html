@@ -21,7 +21,21 @@ body { background: #111827; color: #e5e7eb; font: 12px system-ui, sans-serif; ma
 #panel { position: fixed; top: 12px; right: 12px; width: 330px; max-height: 85vh; display: flex; flex-direction: column; background: #030712; border: 1px solid #374151; border-radius: 8px; font: 11px ui-monospace, monospace; }
 #panel-head { cursor: grab; user-select: none; padding: 6px 10px; color: #9ca3af; border-bottom: 1px solid #374151; }
 #panel-head:active { cursor: grabbing; }
-#panel-body { padding: 10px; overflow: auto; white-space: pre-wrap; }
+#panel-body { padding: 10px; overflow: auto; white-space: normal; }
+#metrics:empty { display: none; }
+.bm { text-align: center; font-size: 10px; }
+.bm-margin { border: 1px dashed #6b7280; background: #f59e0b33; padding: 10px 14px; position: relative; }
+.bm-border { border: 1px solid #9ca3af; padding: 0; }
+.bm-padding { border: 1px dashed #6b7280; background: #84cc1633; padding: 8px 10px; position: relative; }
+.bm-content { background: #3b82f655; border: 1px solid #3b82f6; padding: 6px 4px; font-weight: bold; }
+.bm-v { position: absolute; left: 50%; transform: translateX(-50%); color: #e5e7eb; }
+.bm-h { position: absolute; top: 50%; transform: translateY(-50%); color: #e5e7eb; }
+.bm-tag { color: #9ca3af; }
+.props details { border-top: 1px solid #1f2937; }
+.props summary { cursor: pointer; padding: 4px 0; color: #e5e7eb; font-weight: bold; }
+.props dl { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; margin: 2px 0 8px; }
+.props dt { color: #fca5a5; }
+.props dd { margin: 0; overflow-wrap: anywhere; }
 .controls label { margin-right: 12px; }
 .sel { outline: 2px solid #fff !important; }
 .verdict-ok { color: #22c55e; }
