@@ -394,6 +394,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${iconSrc ? `<div class="prev"><img src="${iconSrc}" onload="this.closest('.prev').querySelector('.dim-src').textContent=this.naturalWidth+'×'+this.naturalHeight+' source'" onerror="this.parentElement.style.display='none'" alt=""></div>` : ""}
       ${rows([
         ["rendered", els ? `≈ ${f1(els.icon.content[0])}×${f1(els.icon.content[1])}` : "—"],
+        ["measured", t.iconM ? `${f1(t.iconM[0])}×${f1(t.iconM[1])}` : "…"],
         ["inspector", "64×64"],
         ["source", `<span class="dim-src">…</span>`],
       ])}
@@ -403,6 +404,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${els?.title ? boxDiagram(els.title.margin, els.title.padding, els.title.content[0], els.title.content[1], false) : ""}
       ${rows([
         ["text", t.label || "(none)"],
+        ["measured", t.labelM ? `${f1(t.labelM[0])}×${f1(t.labelM[1])}` : "…"],
         ["placement", meta?.placement ?? "?"],
         ["font size", `${meta?.fontSize ?? 0}pt`],
         ["row height", meta ? `${f1(labelRowHeight(meta.fontSize))}pt` : "?"],

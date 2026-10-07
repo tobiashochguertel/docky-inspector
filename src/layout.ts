@@ -21,6 +21,10 @@ export interface LayoutTile {
   apps?: string[];
   /** Owning app bundle id (minimized tiles) for its icon. */
   bundle?: string;
+  /** Measured icon sub-frame [w, h] (present once rendered). */
+  iconM?: [number, number];
+  /** Measured label sub-frame [w, h] (present once rendered). */
+  labelM?: [number, number];
 }
 
 export interface LayoutSnapshot {
