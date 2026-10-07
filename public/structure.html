@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Docky Inspector — Tile Anatomy</title>
+<style>
+:root { color-scheme: dark; }
+body { background: #111827; color: #e5e7eb; font: 13px system-ui, sans-serif; margin: 24px auto; max-width: 900px; line-height: 1.5; }
+h1, h2 { color: #fff; }
+a { color: #93c5fd; }
+.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
+.fig { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.box-outer { border: 1px dashed #6b7280; background: #f59e0b22; padding: 26px 30px; position: relative; border-radius: 6px; }
+.box-mid { border: 1px solid #9ca3af; padding: 18px 22px; position: relative; border-radius: 6px; }
+.box-icon { background: #22c55e33; border: 1px dashed #22c55e; padding: 26px 30px; text-align: center; border-radius: 4px; position: relative; }
+.box-label { background: #facc1533; border: 1px dashed #facc15; margin-top: 6px; padding: 4px; text-align: center; border-radius: 4px; position: relative; }
+.tag { position: absolute; font-size: 10px; color: #9ca3af; }
+ul { margin: 8px 0; padding-left: 20px; }
+code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
+.live { color: #22c55e; }
+</style>
+</head>
+<body>
+<p><a href="/">← back to inspector</a></p>
+<h1>Anatomy of a Docky tile</h1>
+<p>Bottom dock, labels below — the default. Values marked <span class="live">● live</span> come from your running dock right now.</p>
+
+<div class="sec">
+<h2>1. Bar → sections → tiles</h2>
+<div class="fig">
+<div>
+<p>The bar is one row of fixed-size tiles. Sections (pinned apps, app folders, minimized windows, trash) are runs of tile kinds separated by dividers — the inspector draws them as <em>section markers</em> under the bar. Every tile is <code>W×H</code>; with labels on, <code>H = icon + gap + label row + paddings</code>.</p>
+<ul>
+<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>.</li>
+<li>Your spacing: <span class="live" id="s-spacing">…</span> · tile: <span class="live" id="s-tile">…</span></li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="sec">
+<h2>2. Inside one tile</h2>
+<div class="fig">
+<div class="box-outer"><span class="tag" style="top:2px;left:4px">tile frame <span class="live" id="d-frame">…</span></span>
+<div class="box-mid"><span class="tag" style="top:2px;left:4px">paddings <span class="live" id="d-pad">…</span></span>
+<div class="box-icon">icon slot <span class="live" id="d-icon">…</span></div>
+<div class="box-label">label row <span class="live" id="d-label">…</span></div>
+</div>
+</div>
+<div>
+<ul>
+<li><b>Tile frame</b> — the layout box every tile reserves. All frames in one bar are identical (dividers excepted).</li>
+<li><b>Paddings</b> — <code>vPad</code> on the cross axis (top+bottom here), <code>iconPad</code> all around. Empty space, no visuals.</li>
+<li><b>Icon slot</b> — the icon's layout box. The <em>painted</em> artwork inside can be smaller: app icons carry transparency, folder mosaics render at ~0.36 minis, minimized cards at 0.8.</li>
+<li><b>Label row</b> — fixed height from the font size (<code>ceil(font×1.2)+2</code>), text truncated with a 2pt side inset so neighbors never touch.</li>
+<li><b>Overlays</b> — running indicator (dot/pill, shifted past the label when they share an edge) and notification badge float above; they never take layout space.</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="sec">
+<h2>3. Special tiles</h2>
+<ul>
+<li><b>App folders</b> — the material background hugs the 2×2 mosaic (not the slot), with a 6% chrome margin, so folders keep breathing room like transparency gives app icons. Stack mode fans full-size icons instead.</li>
+<li><b>Minimized windows</b> — a 0.8 preview card plus the owning app's badge icon; without Screen Recording permission the card falls back to a smaller placeholder symbol.</li>
+<li><b>Launchpad / Start Menu</b> — ordinary app tiles pointed at a fixed bundle id with an overridable icon.</li>
+<li><b>Widgets, spacers, dividers</b> — never labeled; widgets reserve the label row anyway so rows stay aligned.</li>
+</ul>
+</div>
+
+<div class="sec">
+<h2>4. Reading the inspector</h2>
+<ul>
+<li><b>Guides</b> — tile top, icon bottom, label baseline ≈, tile bottom. If all four run unbroken across the bar, rows are aligned.</li>
+<li><b>Metrics modal</b> — <em>Box</em> = tile in the bar, <em>Icon/Title</em> = sub-boxes with margins to the tile edge (they always sum to the frame), <em>Gaps</em> = the margin visual alone.</li>
+<li><b>slot vs painted</b> — <em>slot</em> is the measured layout box, <em>painted</em> the measured visual. Equal for app icons; smaller for mosaics and cards. That difference <em>is</em> the optical gap story.</li>
+</ul>
+</div>
+
+<script>
+(async () => {
+  try {
+    const env = await (await fetch("/api/layout")).json();
+    const d = env.data;
+    const t = d.tiles.find((x) => x.kind === "app") ?? d.tiles[0];
+    const row = Math.ceil(d.fontSize * 1.2) + 2;
+    const set = (id, v) => { document.getElementById(id).textContent = v; };
+    set("s-spacing", `${d.spacing}pt`);
+    set("s-tile", `${t.w}×${t.h}pt`);
+    set("d-frame", `${t.w}×${t.h}pt`);
+    set("d-pad", `v ${d.padding?.v ?? 0}pt`);
+    set("d-icon", `${t.w}×${t.h - 2 * (d.padding?.v ?? 0) - row}pt`);
+    set("d-label", `${t.w}×${row}pt · "${t.label}"`);
+  } catch { /* offline snapshot view */ }
+})();
+</script>
+</body>
+</html>

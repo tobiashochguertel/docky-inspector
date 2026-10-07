@@ -233,6 +233,11 @@ const server = Bun.serve({
         headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
+    if (url.pathname === "/structure") {
+      return new Response(Bun.file(join(import.meta.dir, "..", "public", "structure.html")), {
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
     if (url.pathname === "/app.js") {
       const built = await Bun.build({
         entrypoints: [join(import.meta.dir, "..", "public", "app.ts")],
