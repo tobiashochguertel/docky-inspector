@@ -1,7 +1,9 @@
-// geticon.swift — resolve a bundle id to a PNG icon, exactly the way
-// Docky does (LaunchServices, not bundle file layout). Usage:
+// geticon.swift — resolve icons the way Docky does (LaunchServices).
+// Single icon:
 //   geticon <bundle-id> <output-png> [pixel-size]
-// Exit codes: 0 ok, 1 app not found, 2 render failed, 3 bad args.
+// Folder-style 2x2 mosaic of up to 4 apps:
+//   geticon --mosaic <output-png> [pixel-size] <bundle-id>...
+// Exit codes: 0 ok, 1 app/icon not found, 2 render failed, 3 bad args.
 
 import AppKit
 import Foundation
@@ -11,49 +13,92 @@ func fail(_ code: Int32, _ message: String) -> Never {
     exit(code)
 }
 
+func iconImage(for bundleID: String) -> NSImage? {
+    guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+        return nil
+    }
+    return NSWorkspace.shared.icon(forFile: appURL.path)
+}
+
+func writePNG(_ image: NSImage, side: Int, to outPath: String) {
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: side,
+        pixelsHigh: side,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ) else {
+        fail(2, "could not allocate bitmap")
+    }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    image.draw(
+        in: NSRect(x: 0, y: 0, width: side, height: side),
+        from: NSRect.zero,
+        operation: .copy,
+        fraction: 1.0
+    )
+    NSGraphicsContext.restoreGraphicsState()
+    guard let png = rep.representation(using: .png, properties: [:]) else {
+        fail(2, "could not encode png")
+    }
+    do {
+        try png.write(to: URL(fileURLWithPath: outPath), options: .atomic)
+    } catch {
+        fail(2, "could not write \(outPath): \(error)")
+    }
+}
+
+func drawMosaic(_ bundleIDs: [String], side: Int, to outPath: String) {
+    let canvas = NSImage(size: NSSize(width: side, height: side))
+    canvas.lockFocus()
+    NSColor.clear.set()
+    NSRect(x: 0, y: 0, width: side, height: side).fill()
+    let gap = CGFloat(side) * 0.06
+    let cell = (CGFloat(side) - gap * 3) / 2
+    for (index, bid) in bundleIDs.prefix(4).enumerated() {
+        guard let icon = iconImage(for: bid) else { continue }
+        let col = index % 2
+        let row = index / 2
+        let rect = NSRect(
+            x: gap + CGFloat(col) * (cell + gap),
+            y: gap + CGFloat(1 - row) * (cell + gap),
+            width: cell,
+            height: cell
+        )
+        icon.draw(in: rect, from: NSRect.zero, operation: .sourceOver, fraction: 1.0)
+    }
+    canvas.unlockFocus()
+    writePNG(canvas, side: side, to: outPath)
+}
+
 let args = CommandLine.arguments
-guard args.count >= 3 else { fail(3, "usage: geticon <bundle-id> <output-png> [pixel-size]") }
+guard args.count >= 3 else { fail(3, "usage: geticon [--mosaic] <output-png> ...") }
+
+if args[1] == "--mosaic" {
+    guard args.count >= 4 else { fail(3, "usage: geticon --mosaic <output-png> [pixel-size] <bundle-id>...") }
+    var rest = Array(args.dropFirst(2))
+    var pixels = 256
+    if let first = rest.first, let n = Int(first), rest.count > 1 {
+        pixels = n
+        rest = Array(rest.dropFirst())
+    }
+    guard pixels > 0, pixels <= 1024, !rest.isEmpty else { fail(3, "need pixel-size and at least one bundle id") }
+    drawMosaic(rest, side: pixels, to: args[2])
+    exit(0)
+}
 
 let bundleID = args[1]
 let outPath = args[2]
 let pixels = args.count >= 4 ? Int(args[3]) ?? 256 : 256
 guard pixels > 0, pixels <= 1024 else { fail(3, "pixel-size must be 1...1024") }
 
-guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+guard let icon = iconImage(for: bundleID) else {
     fail(1, "no application for bundle id \(bundleID)")
 }
-
-let icon = NSWorkspace.shared.icon(forFile: appURL.path)
-guard let rep = NSBitmapImageRep(
-    bitmapDataPlanes: nil,
-    pixelsWide: pixels,
-    pixelsHigh: pixels,
-    bitsPerSample: 8,
-    samplesPerPixel: 4,
-    hasAlpha: true,
-    isPlanar: false,
-    colorSpaceName: .deviceRGB,
-    bytesPerRow: 0,
-    bitsPerPixel: 0
-) else {
-    fail(2, "could not allocate bitmap")
-}
-
-NSGraphicsContext.saveGraphicsState()
-NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-icon.draw(
-    in: NSRect(x: 0, y: 0, width: pixels, height: pixels),
-    from: NSRect.zero,
-    operation: .copy,
-    fraction: 1.0
-)
-NSGraphicsContext.restoreGraphicsState()
-
-guard let png = rep.representation(using: .png, properties: [:]) else {
-    fail(2, "could not encode png")
-}
-do {
-    try png.write(to: URL(fileURLWithPath: outPath), options: .atomic)
-} catch {
-    fail(2, "could not write \(outPath): \(error)")
-}
+writePNG(icon, side: pixels, to: outPath)

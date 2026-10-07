@@ -134,9 +134,19 @@ function renderBar(data: LayoutSnapshot, changed: string[], added: string[]): vo
       const col = COLORS[t.kind] ?? "#9ca3af";
       const flag = changed.includes(t.id) ? " changed" : added.includes(t.id) ? " added" : "";
       const name = esc(t.label || t.id.split(":").pop()!.slice(0, 14));
+      const iconSrc =
+        t.kind === "app"
+          ? `/api/icon?id=${encodeURIComponent(t.id)}&kind=app`
+          : t.kind === "appFolder" && t.apps?.length
+            ? `/api/icon?kind=appFolder&bids=${encodeURIComponent(t.apps.join(","))}`
+            : t.kind === "min" && t.bundle
+              ? `/api/icon?kind=min&bid=${encodeURIComponent(t.bundle)}`
+              : t.kind === "trash" || t.kind === "folder"
+                ? `/api/icon?kind=${t.kind}`
+                : null;
       const iconInner =
-        view["v-icons"] && (t.kind === "app" || t.kind === "trash" || t.kind === "folder")
-          ? `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><img src="/api/icon?id=${encodeURIComponent(t.id)}&kind=${t.kind}" style="width:100%;height:100%;object-fit:contain" onerror="this.remove()" alt=""><span class="kind">${esc(t.kind)}</span></div>`
+        view["v-icons"] && iconSrc
+          ? `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><img src="${iconSrc}" style="width:100%;height:100%;object-fit:contain${t.kind === "min" ? ";opacity:.75" : ""}" onerror="this.remove()" alt=""><span class="kind">${esc(t.kind)}</span></div>`
           : `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><span class="kind">${esc(t.kind)}</span></div>`;
       const padBox =
         view["v-padding"] && pad.v > 0

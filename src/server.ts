@@ -53,18 +53,40 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<{ stdou
   }
 }
 
-/** Compiled geticon helper (built once from tools/geticon.swift). */
+/** Compiled geticon helper (rebuilt when the source is newer). */
 async function ensureIconHelper(): Promise<string | null> {
   const bin = join(ICON_CACHE, "geticon");
-  if (await Bun.file(bin).exists()) return bin;
   const src = join(import.meta.dir, "..", "tools", "geticon.swift");
   if (!(await Bun.file(src).exists())) return null;
-  try {
-    await Bun.$`swiftc -O -o ${bin} ${src}`.quiet();
-  } catch {
-    return null;
+  const srcMtime = (await Bun.file(src).stat()).mtime.getTime();
+  const binMtime = (await Bun.file(bin).exists())
+    ? (await Bun.file(bin).stat()).mtime.getTime()
+    : 0;
+  if (binMtime < srcMtime) {
+    await Bun.$`mkdir -p ${ICON_CACHE}`.quiet();
+    try {
+      await Bun.$`swiftc -O -o ${bin} ${src}`.quiet();
+    } catch {
+      return null;
+    }
   }
   return (await Bun.file(bin).exists()) ? bin : null;
+}
+
+/** Folder mosaic PNG for a set of bundle ids, keyed by content hash. */
+async function mosaicIcon(bids: string[]): Promise<string | null> {
+  const list = bids.filter((b) => /^[A-Za-z0-9.\-]+$/.test(b)).slice(0, 4);
+  if (list.length === 0) return null;
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(list.join(","));
+  const key = `mosaic-${hasher.digest("hex").slice(0, 12)}@${ICON_SIZE}.png`;
+  const cached = join(ICON_CACHE, key);
+  if (await Bun.file(cached).exists()) return cached;
+  const helper = await ensureIconHelper();
+  if (!helper) return null;
+  const rendered = await runWithTimeout([helper, "--mosaic", cached, String(ICON_SIZE), ...list], 30000);
+  if (!rendered || !(await Bun.file(cached).exists())) return null;
+  return cached;
 }
 
 /** Real bundle for a Spotlight result: follows Finder wrapper stubs
@@ -166,10 +188,19 @@ async function systemIcon(kind: string): Promise<string | null> {  const safe = 
 async function serveIcon(url: URL): Promise<Response> {
   const id = url.searchParams.get("id") ?? "";
   const kind = url.searchParams.get("kind") ?? "";
+  const explicitBid = url.searchParams.get("bid") ?? "";
+  const explicitBids = (url.searchParams.get("bids") ?? "")
+    .split(",")
+    .map((b) => b.trim())
+    .filter((b) => b.length > 0);
   let png: string | null = null;
   if (kind === "app") {
-    const bid = bundleIdFromTileId(id);
+    const bid = explicitBid || bundleIdFromTileId(id);
     if (bid) png = await appIcon(bid);
+  } else if (kind === "appFolder") {
+    if (explicitBids.length > 0) png = await mosaicIcon(explicitBids);
+  } else if (kind === "min") {
+    if (explicitBid) png = await appIcon(explicitBid);
   } else if (kind === "trash" || kind === "folder") {
     png = await systemIcon(kind);
   } else {

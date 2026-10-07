@@ -17,6 +17,10 @@ export interface LayoutTile {
   c: number;
   /** Resolved label text, "" when the tile shows none. */
   label: string;
+  /** Contained bundle ids (appFolder tiles, up to 4) for mosaic icons. */
+  apps?: string[];
+  /** Owning app bundle id (minimized tiles) for its icon. */
+  bundle?: string;
 }
 
 export interface LayoutSnapshot {
