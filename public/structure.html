@@ -4,66 +4,95 @@
 <meta charset="utf-8">
 <title>Docky Inspector — Tile Anatomy</title>
 <style>
-:root { color-scheme: dark; }
+:root {
+  color-scheme: dark;
+  /* px per pt — figures below are drawn to true scale */
+  --u: 2.5px;
+  --tile-w: 40; --tile-h: 68; --icon: 40; --label: 12; --label-gap: 8; --pad: 8; --spacing: 0;
+  --paint-mos: 36; --paint-min: 32;
+}
 body { background: #111827; color: #e5e7eb; font: 13px system-ui, sans-serif; margin: 24px auto; max-width: 900px; line-height: 1.5; }
 h1, h2 { color: #fff; }
 h2 { margin-top: 0; font-size: 15px; }
 a { color: #93c5fd; }
-.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
-.fig { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px 30px; margin: 16px 0; }
+.fig { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
+.figcol { display: flex; flex-direction: column; gap: 10px; }
+ul { margin: 8px 0; padding-left: 20px; }
+code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
+.live { color: #22c55e; }
+.scalenote { font-size: 11px; color: #6b7280; }
+
+/* ---- section 2: single tile, blown up (not to scale) ---- */
 .box-outer { border: 1px dashed #6b7280; background: #f59e0b22; padding: 26px 30px; position: relative; border-radius: 6px; }
 .box-mid { border: 1px solid #9ca3af; padding: 18px 22px; position: relative; border-radius: 6px; }
 .box-icon { background: #22c55e33; border: 1px dashed #22c55e; padding: 26px 30px; text-align: center; border-radius: 4px; position: relative; }
 .box-label { background: #facc1533; border: 1px dashed #facc15; margin-top: 6px; padding: 4px; text-align: center; border-radius: 4px; position: relative; }
 .tag { position: absolute; font-size: 10px; color: #9ca3af; }
-ul { margin: 8px 0; padding-left: 20px; }
-code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
-.live { color: #22c55e; }
-.cap { font-size: 11px; color: #9ca3af; max-width: 260px; }
-.cap b { color: #e5e7eb; }
 
-/* --- shared mini-tile primitives (sections 1, 3, 4) --- */
-.tl { width: 34px; display: flex; flex-direction: column; align-items: center; flex: none; }
-.tl .ic { width: 26px; height: 26px; border-radius: 6px; background: #60a5fa; flex: none; position: relative; }
-.tl .lb { width: 24px; height: 8px; margin-top: 3px; background: #facc15; border-radius: 2px; opacity: .85; flex: none; }
-.tl .ic.run::after { content: ""; position: absolute; bottom: -3px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #e5e7eb; }
-.bar { display: inline-block; }
-.barrow { display: flex; align-items: center; background: #0b1220; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px; }
-.seg { position: relative; display: flex; align-items: center; }
-.seg .mk { position: absolute; top: 100%; left: 0; right: 0; margin-top: 7px; text-align: center; font-size: 10px; color: #9ca3af; white-space: nowrap; }
-.dv { width: 1px; align-self: stretch; background: #6b7280; margin: 0 10px; position: relative; }
-.dv .mk { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 7px; font-size: 10px; color: #9ca3af; white-space: nowrap; }
-.gapl { width: 20px; align-self: stretch; position: relative; flex: none; }
-.gapl b { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font: 9px ui-monospace, monospace; font-weight: normal; color: #93c5fd; background: #0b1220; padding: 1px 3px; border: 1px solid #1e3a8a; border-radius: 3px; white-space: nowrap; }
+/* ---- mini tile, drawn to true scale from the live snapshot ---- */
+.tl { position: relative; flex: none; width: calc(var(--tile-w) * var(--u)); height: calc(var(--tile-h) * var(--u)); }
+.tl .fr { position: absolute; inset: 0; border: 1px dashed #cbd5e1; border-radius: calc(2 * var(--u)); opacity: .7; z-index: 2; }
+.tl .ic {
+  position: absolute; top: calc(var(--pad) * var(--u)); left: 0; right: 0; margin: auto;
+  width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u));
+  border-radius: calc(6 * var(--u)); background: #60a5fa; flex: none;
+}
+.tl .lb {
+  position: absolute; bottom: 0; left: 0; right: 0; margin: auto;
+  width: calc(var(--icon) * var(--u)); height: calc(var(--label) * var(--u));
+  background: #facc15; opacity: .85; border-radius: calc(2 * var(--u));
+}
+.tl .lb.nolab { background: repeating-linear-gradient(45deg, #334155, #334155 4px, #1e293b 4px, #1e293b 8px); opacity: 1; }
+.tl .ic.run::after { content: ""; position: absolute; bottom: calc(-3 * var(--u)); left: 50%; width: calc(4 * var(--u)); height: calc(4 * var(--u)); margin-left: calc(-2 * var(--u)); border-radius: 50%; background: #e5e7eb; }
 
-/* special-tile innards */
-.ic.folder { background: #ffffff26; border-radius: 9px; padding: 3px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-.ic.folder i { background: #34d399; border-radius: 2px; }
-.ic.min { background: #111827; border: 1px solid #374151; border-radius: 5px; }
-.ic.min .card { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); width: 19px; height: 16px; background: #a78bfa; border-radius: 2px; }
-.ic.min .badge { position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; border-radius: 50%; background: #60a5fa; border: 1px solid #0b1220; }
-.ic.min.ph .card { background: #6b7280; width: 11px; height: 11px; }
-.ic.lp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; background: #ffffff1a; border-radius: 7px; }
-.ic.lp i { background: #f472b6; border-radius: 1px; }
-.ic.wid { height: 20px; background: #374151; border-radius: 4px; }
+/* section 1 bar */
+.barrow { display: flex; align-items: flex-start; background: #0b1220; border: 1px solid #374151; border-radius: 10px; padding: 26px 18px 30px; }
+.seg { display: flex; align-items: center; position: relative; }
+.seg > .mk { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; color: #9ca3af; }
+.dv { width: 1px; align-self: stretch; background: #6b7280; margin: 0 14px; position: relative; flex: none; }
+.dv > .mk { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; color: #6b7280; }
+.gapm { width: calc(var(--spacing) * var(--u)); align-self: stretch; position: relative; flex: none; }
+.gapm::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; border-left: 1px dashed #1e3a8a; }
+.gapm > span { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 9px); white-space: nowrap; font: 11px ui-monospace, monospace; color: #93c5fd; background: #0b1220; border: 1px solid #1e3a8a; border-radius: 4px; padding: 1px 5px; }
+
+/* section 3 captions */
+.cellwrap { display: flex; align-items: flex-start; }
+.cell { display: flex; flex-direction: column; align-items: center; }
+.cell .cap { margin-top: 10px; width: calc(var(--tile-w) * var(--u)); text-align: center; font-size: 11px; line-height: 1.25; color: #9ca3af; }
+.ic.folder { background: #ffffff26; border-radius: calc(4 * var(--u)); padding: calc(1.5 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(0.8 * var(--u)); }
+.ic.folder i { background: #34d399; border-radius: calc(1 * var(--u)); }
+.ic.min { background: #111827; border: 1px solid #374151; border-radius: calc(3 * var(--u)); }
+.ic.min .card { position: absolute; left: 50%; bottom: calc(1.2 * var(--u)); transform: translateX(-50%); width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); background: #a78bfa; border-radius: calc(1 * var(--u)); }
+.ic.min .badge { position: absolute; right: 0; bottom: 0; width: calc(9 * var(--u)); height: calc(9 * var(--u)); border-radius: 50%; background: #60a5fa; border: 1px solid #0b1220; }
+.ic.min.ph .card { background: #6b7280; width: calc(var(--paint-min) * 0.58 * var(--u)); height: calc(var(--paint-min) * 0.5 * var(--u)); }
+.ic.lp { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(1 * var(--u)); padding: calc(1.5 * var(--u)); background: #ffffff1a; border-radius: calc(4 * var(--u)); }
+.ic.lp i { background: #f472b6; border-radius: calc(0.6 * var(--u)); }
+.ic.wid { height: calc(var(--icon) * 0.78 * var(--u)); background: #374151; border-radius: calc(3 * var(--u)); }
 .ic.spacer { background: repeating-linear-gradient(45deg, #1f2937, #1f2937 4px, #263141 4px, #263141 8px); border: 1px dashed #4b5563; }
+.ic.trash { background: #6b7280; }
 
 /* section 4: guides + slot/painted */
-.gbar { position: relative; }
-.gline { position: absolute; left: 16px; right: 16px; height: 0; border-top: 1px dashed; z-index: 2; }
-.gline span { position: absolute; right: 0; top: -13px; font-size: 9px; color: #0b1220; background: #d1d5db; padding: 0 3px; border-radius: 2px; white-space: nowrap; }
-.gline.gl-top { top: 12px; border-color: #3b82f6; }
-.gline.gl-icon { top: 38px; border-color: #22c55e; }
-.gline.gl-base { top: 46px; border-color: #facc15; border-top-style: dotted; }
-.gline.gl-bot { top: 49px; border-color: #f472b6; }
-.pair { display: flex; gap: 22px; }
+.gbar { padding-left: 240px; }
+.trow.g { position: relative; display: flex; align-items: flex-start; }
+.gline { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed; z-index: 3; }
+.gline > span { position: absolute; right: calc(100% + 12px); top: 50%; transform: translateY(-50%); white-space: nowrap; font: 11px ui-monospace, monospace; background: #0b1220; border-radius: 4px; padding: 1px 6px; }
+.gl-top { top: 0; border-color: #3b82f6; }
+.gl-top > span { color: #93c5fd; border: 1px solid #1e3a8a; }
+.gl-icon { top: calc((var(--pad) + var(--icon)) * var(--u)); border-color: #22c55e; }
+.gl-icon > span { color: #4ade80; border: 1px solid #14532d; }
+.gl-base { top: calc((var(--pad) + var(--icon) + var(--label-gap) + var(--label) * 0.8) * var(--u)); border-color: #facc15; border-top-style: dotted; }
+.gl-base > span { color: #fde047; border: 1px solid #713f12; right: calc(100% + 104px); }
+.gl-bot { top: calc(var(--tile-h) * var(--u)); border-color: #f472b6; }
+.gl-bot > span { color: #f9a8d4; border: 1px solid #831843; right: calc(100% + 12px); }
+.pair { display: flex; gap: 26px; }
 .pv { text-align: center; }
-.pv .slot { width: 54px; height: 54px; border: 1px dashed #22c55e; background: #22c55e1a; border-radius: 6px; position: relative; }
-.pv .slot em { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-style: normal; font-size: 26px; }
-.pv .slot .in { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border: 1px solid #fb9231; border-radius: 3px; background: #fb92314d; }
-.pv .slot .in.mos { width: 34px; height: 34px; }
-.pv .slot .in.cd { width: 43px; height: 43px; }
-.pv small { display: block; margin-top: 5px; font-size: 10px; color: #9ca3af; }
+.pv .slot { width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u)); border: 1px dashed #22c55e; background: #22c55e1a; border-radius: calc(4 * var(--u)); position: relative; }
+.pv .slot em { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-style: normal; font-size: calc(var(--icon) * var(--u) * 0.5); }
+.pv .slot .in { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border: 1px solid #fb9231; border-radius: calc(2 * var(--u)); background: #fb92314d; }
+.pv .slot .in.mos { width: calc(var(--paint-mos) * var(--u)); height: calc(var(--paint-mos) * var(--u)); }
+.pv .slot .in.cd { width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); }
+.pv small { display: block; margin-top: 8px; font-size: 11px; color: #9ca3af; max-width: calc(var(--icon) * var(--u)); }
 .pv small b { color: #fb9231; }
 </style>
 </head>
@@ -75,36 +104,35 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
 <div class="sec">
 <h2>1. Bar → sections → tiles</h2>
 <div class="fig">
-<div class="bar">
-  <div class="barrow">
-    <div class="seg">
-      <div class="tl"><div class="ic run"></div><div class="lb"></div></div>
-      <div class="gapl"><b>spacing <span class="live" id="s-spacing">…</span></b></div>
-      <div class="tl"><div class="ic"></div><div class="lb"></div></div>
-      <div class="tl"><div class="ic"></div><div class="lb"></div></div>
-      <span class="mk">section 1 — pinned apps (<span class="live" id="s-apps">…</span>)</span>
-    </div>
-    <div class="dv"><span class="mk">divider</span></div>
-    <div class="seg">
-      <div class="tl"><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-      <div class="tl"><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-      <span class="mk">section 2 — app folders (<span class="live" id="s-folders">…</span>)</span>
-    </div>
-    <div class="dv"><span class="mk">divider</span></div>
-    <div class="seg">
-      <div class="tl"><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div>
-      <div class="tl"><div class="ic" style="background:#6b7280"></div><div class="lb"></div></div>
-      <span class="mk">section 3 — minimized + trash</span>
-    </div>
+<div class="barrow">
+  <div class="seg">
+    <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
+    <div class="gapm"><span>spacing <b class="live" id="s-spacing">…</b></span></div>
+    <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    <span class="mk">pinned apps · <span class="live" id="s-apps">…</span></span>
+  </div>
+  <div class="dv"><span class="mk">divider</span></div>
+  <div class="seg">
+    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+    <span class="mk">app folders · <span class="live" id="s-folders">…</span></span>
+  </div>
+  <div class="dv"><span class="mk">divider</span></div>
+  <div class="seg">
+    <div class="tl"><span class="fr"></span><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div>
+    <div class="tl"><span class="fr"></span><div class="ic trash"></div><div class="lb"></div></div>
+    <span class="mk">minimized + trash</span>
   </div>
 </div>
 <div>
 <ul>
 <li>The bar is one row of fixed-size tiles. <b>Sections</b> (pinned apps, app folders, minimized windows, trash) are runs of tile kinds separated by <b>dividers</b> — the inspector draws them as <em>section markers</em> under the bar.</li>
-<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>. The highlighted band is that spacing.</li>
-<li>Your spacing: <span class="live" id="s-spacing2">…</span> · tile: <span class="live" id="s-tile">…</span> · total tiles: <span class="live" id="s-count">…</span></li>
-<li>Every tile is <code>W×H</code>; with labels on, <code>H = icon + gap + label row + paddings</code> — so a taller label grows the tile, never the icon.</li>
+<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>. The dashed marker above the bar sits exactly in that spacing — at <span class="live" id="s-spacing2">…</span> the frames touch.</li>
+<li>Your tile: <span class="live" id="s-tile">…</span> · total tiles: <span class="live" id="s-count">…</span> · every tile frame is identical (dividers excepted).</li>
+<li><code>H = pad + icon + pad + label row</code> — a taller label grows the tile, never the icon.</li>
 </ul>
+<p class="scalenote">Figures 1, 3 and 4 are drawn to true scale at <span id="u-note">2.5 px/pt</span>; figure 2 is a single tile blown up for legibility.</p>
 </div>
 </div>
 </div>
@@ -133,15 +161,16 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
 <div class="sec">
 <h2>3. Special tiles</h2>
 <div class="fig">
-<div class="bar"><div class="barrow">
-  <div class="tl"><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-  <div class="tl"><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div>
-  <div class="tl"><div class="ic min ph"><span class="card"></span></div><div class="lb"></div></div>
-  <div class="tl"><div class="ic lp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-  <div class="tl"><div class="ic wid"></div><div class="lb"></div></div>
-  <div class="tl"><div class="ic spacer"></div><div class="lb"></div></div>
-  <div class="dv" style="margin:0 4px"></div>
-</div></div>
+<div class="barrow">
+  <div class="cellwrap">
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div><div class="cap">App folder</div></div>
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic min"><span class="card"></span><span class="badge"></span></div><div class="lb"></div></div><div class="cap">Minimized window</div></div>
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic min ph"><span class="card"></span></div><div class="lb"></div></div><div class="cap">Placeholder card</div></div>
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic lp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="lb"></div></div><div class="cap">Launchpad</div></div>
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic wid"></div><div class="lb"></div></div><div class="cap">Widget</div></div>
+    <div class="cell"><div class="tl"><span class="fr"></span><div class="ic spacer"></div><div class="lb nolab"></div></div><div class="cap">Spacer</div></div>
+  </div>
+</div>
 <div>
 <ul>
 <li><b>App folder</b> — the material background hugs the 2×2 mosaic (not the slot), with a 6% chrome margin, so folders keep breathing room like transparency gives app icons. Stack mode fans full-size icons instead.</li>
@@ -157,22 +186,24 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
 <div class="sec">
 <h2>4. Reading the inspector</h2>
 <div class="fig">
-<div class="bar">
+<div class="figcol">
   <div class="barrow gbar">
-    <div class="gline gl-top"><span>tile top</span></div>
-    <div class="gline gl-icon"><span>icon bottom</span></div>
-    <div class="gline gl-base"><span>label baseline ≈</span></div>
-    <div class="gline gl-bot"><span>tile bottom</span></div>
-    <div class="tl"><div class="ic run"></div><div class="lb"></div></div>
-    <div class="tl"><div class="ic"></div><div class="lb"></div></div>
-    <div class="tl"><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    <div class="tl"><div class="ic"></div><div class="lb"></div></div>
+    <div class="trow g">
+      <div class="gline gl-top"><span>tile top</span></div>
+      <div class="gline gl-icon"><span>icon bottom</span></div>
+      <div class="gline gl-base"><span>label baseline ≈</span></div>
+      <div class="gline gl-bot"><span>tile bottom</span></div>
+      <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
+      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
+    </div>
   </div>
-</div>
-<div class="pair">
-  <div class="pv"><div class="slot"><em>🧊</em></div><small>app icon — <b>slot = painted</b></small></div>
-  <div class="pv"><div class="slot"><em style="opacity:.35">🧊</em><div class="in mos"></div></div><small>folder mosaic — <b>painted &lt; slot</b></small></div>
-  <div class="pv"><div class="slot"><em style="opacity:.35">🪟</em><div class="in cd"></div></div><small>minimized card — <b>at 0.8</b></small></div>
+  <div class="pair">
+    <div class="pv"><div class="slot"><em>🧊</em></div><small>app icon<br><b>slot = painted</b><br>gap = transparency</small></div>
+    <div class="pv"><div class="slot"><em style="opacity:.3">🧊</em><div class="in mos"></div></div><small>folder mosaic<br>painted <b id="p-mos">…</b> in a <span id="p-slot">…</span> slot</small></div>
+    <div class="pv"><div class="slot"><em style="opacity:.3">🪟</em><div class="in cd"></div></div><small>minimized card<br>painted <b id="p-min">…</b> in a <span id="p-slot2">…</span> slot</small></div>
+  </div>
 </div>
 <div>
 <ul>
@@ -191,8 +222,29 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
     const d = env.data;
     const t = d.tiles.find((x) => x.kind === "app") ?? d.tiles[0];
     const row = Math.ceil(d.fontSize * 1.2) + 2;
-    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const pad = d.padding?.v ?? 0;
+    const root = document.documentElement.style;
+    const u = Number(getComputedStyle(document.documentElement).getPropertyValue("--u").replace("px", "")) || 2.5;
+    root.setProperty("--u", `${u}px`);
+    root.setProperty("--tile-w", String(t.w));
+    root.setProperty("--tile-h", String(t.h));
+    root.setProperty("--icon", String(t.iconM?.[0] ?? t.w));
+    root.setProperty("--label", String(t.labelM?.[1] ?? row));
+    root.setProperty("--label-gap", String(pad));
+    root.setProperty("--pad", String(pad));
+    root.setProperty("--spacing", String(d.spacing));
+    const fold = d.tiles.find((x) => x.kind === "appFolder" && x.paintM);
+    const min = d.tiles.find((x) => x.kind === "min" && x.paintM);
+    const r1 = (n) => String(Math.round(n * 10) / 10);
+    if (fold) root.setProperty("--paint-mos", String(Math.round(fold.paintM[0] * 10) / 10));
+    if (min) root.setProperty("--paint-min", String(Math.round(min.paintM[0] * 10) / 10));
     const n = (k) => d.tiles.filter((x) => x.kind === k).length;
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set("u-note", `${u} px/pt`);
+    set("p-mos", fold ? `${r1(fold.paintM[0])}×${r1(fold.paintM[1])}pt` : "…");
+    set("p-min", min ? `${r1(min.paintM[0])}×${r1(min.paintM[1])}pt` : "…");
+    set("p-slot", `${t.w}pt`);
+    set("p-slot2", `${t.w}pt`);
     set("s-spacing", `${d.spacing}pt`);
     set("s-spacing2", `${d.spacing}pt`);
     set("s-tile", `${t.w}×${t.h}pt`);
@@ -200,8 +252,8 @@ code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px;
     set("s-apps", String(n("app")));
     set("s-folders", String(n("appFolder")));
     set("d-frame", `${t.w}×${t.h}pt`);
-    set("d-pad", `v ${d.padding?.v ?? 0}pt`);
-    set("d-icon", `${t.w}×${t.h - 2 * (d.padding?.v ?? 0) - row}pt`);
+    set("d-pad", `v ${pad}pt`);
+    set("d-icon", `${t.w}×${t.h - 2 * pad - row}pt`);
     set("d-label", `${t.w}×${row}pt · "${t.label}"`);
   } catch { /* offline snapshot view */ }
 })();
