@@ -53,6 +53,20 @@ async function runWithTimeout(cmd: string[], timeoutMs: number): Promise<{ stdou
   }
 }
 
+/** Compiled geticon helper (built once from tools/geticon.swift). */
+async function ensureIconHelper(): Promise<string | null> {
+  const bin = join(ICON_CACHE, "geticon");
+  if (await Bun.file(bin).exists()) return bin;
+  const src = join(import.meta.dir, "..", "tools", "geticon.swift");
+  if (!(await Bun.file(src).exists())) return null;
+  try {
+    await Bun.$`swiftc -O -o ${bin} ${src}`.quiet();
+  } catch {
+    return null;
+  }
+  return (await Bun.file(bin).exists()) ? bin : null;
+}
+
 /** Real bundle for a Spotlight result: follows Finder wrapper stubs
  * (`Foo.app/Wrapper/Foo.app`) whose outer bundle holds no Resources. */
 async function resolveAppBundle(appPath: string): Promise<string | null> {
@@ -70,11 +84,19 @@ async function resolveAppBundle(appPath: string): Promise<string | null> {
   return null;
 }
 
-/** Real app icon PNG via the bundle's .icns (sips), cached forever. Null when unresolvable. */
+/** Real app icon PNG via LaunchServices (same source Docky renders),
+ * cached forever. Falls back to bundle .icns extraction. Null when
+ * unresolvable. */
 async function appIcon(bid: string): Promise<string | null> {
   const safe = `${bid.replace(/[^A-Za-z0-9.\-]/g, "_")}@${ICON_SIZE}.png`;
   const cached = join(ICON_CACHE, safe);
   if (await Bun.file(cached).exists()) return cached;
+  await Bun.$`mkdir -p ${ICON_CACHE}`.quiet();
+  const helper = await ensureIconHelper();
+  if (helper) {
+    const rendered = await runWithTimeout([helper, bid, cached, String(ICON_SIZE)], 20000);
+    if (rendered && (await Bun.file(cached).exists())) return cached;
+  }
   const found = await runWithTimeout(["mdfind", `kMDItemCFBundleIdentifier == '${bid}'`], 15000);
   const appPath = found?.stdout
     .split("\n")
