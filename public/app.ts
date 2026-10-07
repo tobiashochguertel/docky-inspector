@@ -283,7 +283,6 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<dl>${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
   const group = (name: string, fallback: boolean, inner: string): string =>
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
-  const row = meta ? labelRowHeight(meta.fontSize) : 0;
   const iconSlot = iconSlotSize(t.w, t.h);
   const iconSrc = iconSrcFor(t);
   const iconChild = `
