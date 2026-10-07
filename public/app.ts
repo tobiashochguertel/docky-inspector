@@ -78,6 +78,15 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
 
+/** Icon URL for a tile, mirroring the bar's resolution (null = none). */
+function iconSrcFor(t: LayoutTile): string | null {
+  if (t.kind === "app") return `/api/icon?id=${encodeURIComponent(t.id)}&kind=app`;
+  if (t.kind === "appFolder" && t.apps?.length)
+    return `/api/icon?kind=appFolder&bids=${encodeURIComponent(t.apps.join(","))}`;
+  if (t.kind === "min" && t.bundle) return `/api/icon?kind=min&bid=${encodeURIComponent(t.bundle)}`;
+  if (t.kind === "trash" || t.kind === "folder") return `/api/icon?kind=${t.kind}`;
+  return null;
+}
 /** Section name for the marker strip under the bar. */
 function sectionOf(kind: string): string {
   switch (kind) {
@@ -134,18 +143,9 @@ function renderBar(data: LayoutSnapshot, changed: string[], added: string[]): vo
       const col = COLORS[t.kind] ?? "#9ca3af";
       const flag = changed.includes(t.id) ? " changed" : added.includes(t.id) ? " added" : "";
       const name = esc(t.label || t.id.split(":").pop()!.slice(0, 14));
-      const iconSrc =
-        t.kind === "app"
-          ? `/api/icon?id=${encodeURIComponent(t.id)}&kind=app`
-          : t.kind === "appFolder" && t.apps?.length
-            ? `/api/icon?kind=appFolder&bids=${encodeURIComponent(t.apps.join(","))}`
-            : t.kind === "min" && t.bundle
-              ? `/api/icon?kind=min&bid=${encodeURIComponent(t.bundle)}`
-              : t.kind === "trash" || t.kind === "folder"
-                ? `/api/icon?kind=${t.kind}`
-                : null;
+      const iconSrc = view["v-icons"] ? iconSrcFor(t) : null;
       const iconInner =
-        view["v-icons"] && iconSrc
+        iconSrc
           ? `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><img src="${iconSrc}" style="width:100%;height:100%;object-fit:contain${t.kind === "min" ? ";opacity:.75" : ""}" onload="this.nextElementSibling.style.display='none'" onerror="this.remove()" alt=""><span class="kind">${esc(t.kind)}</span></div>`
           : `<div class="icon" style="height:${h - rowPx}px;background:${col}55;border:1px solid ${col}"><span class="kind">${esc(t.kind)}</span></div>`;
       const padBox =
@@ -283,6 +283,9 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
   return (
     box +
+    (iconSrcFor(t)
+      ? `<div class="prev"><img src="${iconSrcFor(t)}" onerror="this.parentElement.style.display='none'" alt=""></div>`
+      : "") +
     `<div class="props">` +
     group("Box", true, rows([
       ["frame", `${f(x0)} … ${f(x1)} (w ${f(t.w)}, h ${f(t.h)})`],
