@@ -296,6 +296,7 @@ interface ElBox {
 
 const f1 = (n: number): string => (Math.round(n * 10) / 10).toString();
 const zeroSides: SideVals = { t: 0, r: 0, b: 0, l: 0 };
+const gapVals = (m: SideVals): string => `${f1(m.t)} / ${f1(m.r)} / ${f1(m.b)} / ${f1(m.l)}`;
 
 /** Shared nested box-model diagram (Docky tiles have no border). */
 function boxDiagram(m: SideVals, p: SideVals, cw: number, ch: number, approx: boolean): string {
@@ -437,6 +438,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${rows([
         ["painted", t.paintM ? `${f1(t.paintM[0])}×${f1(t.paintM[1])}` : "…"],
         ["slot", t.iconM ? `${f1(t.iconM[0])}×${f1(t.iconM[1])}` : "…"],
+        ["gaps t/r/b/l", els ? gapVals(els.icon.margin) : "—"],
         ["inspector", "64×64"],
         ["source", `<span class="dim-src">…</span>`],
       ])}
@@ -447,6 +449,7 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${rows([
         ["text", t.label || "(none)"],
         ["measured", t.labelM ? `${f1(t.labelM[0])}×${f1(t.labelM[1])}` : "…"],
+        ["gaps t/r/b/l", els?.title ? gapVals(els.title.margin) : "—"],
         ["placement", meta?.placement ?? "?"],
         ["font size", `${meta?.fontSize ?? 0}pt`],
         ["row height", meta ? `${f1(labelRowHeight(meta.fontSize))}pt` : "?"],
