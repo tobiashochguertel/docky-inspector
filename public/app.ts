@@ -296,7 +296,6 @@ interface ElBox {
 
 const f1 = (n: number): string => (Math.round(n * 10) / 10).toString();
 const zeroSides: SideVals = { t: 0, r: 0, b: 0, l: 0 };
-const gapVals = (m: SideVals): string => `${f1(m.t)} / ${f1(m.r)} / ${f1(m.b)} / ${f1(m.l)}`;
 
 /** Shared nested box-model diagram (Docky tiles have no border). */
 function boxDiagram(m: SideVals, p: SideVals, cw: number, ch: number, approx: boolean): string {
@@ -314,6 +313,22 @@ function boxDiagram(m: SideVals, p: SideVals, cw: number, ch: number, approx: bo
     sides(p) +
     `<div class="bm-content">${f1(cw)}×${f1(ch)}${approx ? " ≈" : ""}</div>` +
     `</div></div></div></div>`
+  );
+}
+
+/** Margin-focused visual: content box with per-side gap values only,
+ *  for the dedicated Gaps sections. */
+function gapsDiagram(m: SideVals, cw: number, ch: number): string {
+  const sides = (v: SideVals): string =>
+    `<span class="bm-v" style="top:2px">${f1(v.t)}</span>` +
+    `<span class="bm-h" style="right:2px">${f1(v.r)}</span>` +
+    `<span class="bm-v" style="bottom:2px">${f1(v.b)}</span>` +
+    `<span class="bm-h" style="left:2px">${f1(v.l)}</span>`;
+  return (
+    `<div class="bm"><div class="bm-margin"><span class="bm-tag">margin</span>` +
+    sides(m) +
+    `<div class="bm-content">${f1(cw)}×${f1(ch)}</div>` +
+    `</div></div>`
   );
 }
 
@@ -431,6 +446,10 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
   const els = meta ? elementBoxes(t, meta) : null;
   const iconSrc = iconSrcFor(t);
+  const gapsGroup = (name: string, m: SideVals, cw: number, ch: number): string =>
+    `<details${groupOpen(name, true) ? " open" : ""} data-group="${name}"><summary>Gaps</summary>` +
+    gapsDiagram(m, cw, ch) +
+    `</details>`;
   const iconChild = `
     <details${groupOpen("Tile › Icon", true) ? " open" : ""} data-group="Tile › Icon"><summary>Icon</summary>
       ${els ? boxDiagram(els.icon.margin, els.icon.padding, els.icon.content[0], els.icon.content[1], true) : ""}
@@ -438,10 +457,10 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${rows([
         ["painted", t.paintM ? `${f1(t.paintM[0])}×${f1(t.paintM[1])}` : "…"],
         ["slot", t.iconM ? `${f1(t.iconM[0])}×${f1(t.iconM[1])}` : "…"],
-        ["gaps t/r/b/l", els ? gapVals(els.icon.margin) : "—"],
         ["inspector", "64×64"],
         ["source", `<span class="dim-src">…</span>`],
       ])}
+      ${els ? gapsGroup("Tile › Icon › Gaps", els.icon.margin, els.icon.content[0], els.icon.content[1]) : ""}
     </details>`;
   const titleChild = `
     <details${groupOpen("Tile › Title", true) ? " open" : ""} data-group="Tile › Title"><summary>Title</summary>
@@ -449,11 +468,11 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ${rows([
         ["text", t.label || "(none)"],
         ["measured", t.labelM ? `${f1(t.labelM[0])}×${f1(t.labelM[1])}` : "…"],
-        ["gaps t/r/b/l", els?.title ? gapVals(els.title.margin) : "—"],
         ["placement", meta?.placement ?? "?"],
         ["font size", `${meta?.fontSize ?? 0}pt`],
         ["row height", meta ? `${f1(labelRowHeight(meta.fontSize))}pt` : "?"],
       ])}
+      ${els?.title ? gapsGroup("Tile › Title › Gaps", els.title.margin, els.title.content[0], els.title.content[1]) : ""}
     </details>`;
   return (
     boxDiagram(tileMargin, tilePad, t.w, t.h, false) +

@@ -230,7 +230,7 @@ const server = Bun.serve({
     const url = new URL(req.url);
     if (url.pathname === "/") {
       return new Response(Bun.file(join(import.meta.dir, "..", "public", "index.html")), {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
     if (url.pathname === "/app.js") {
@@ -243,7 +243,7 @@ const server = Bun.serve({
         return new Response(built.logs.join("\n"), { status: 500 });
       }
       return new Response(await built.outputs[0].text(), {
-        headers: { "Content-Type": "text/javascript; charset=utf-8" },
+        headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
       });
     }
     if (url.pathname === "/api/icon") {
