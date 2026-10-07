@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Docky Inspector</title>
+<style>
+:root { color-scheme: dark; }
+body { background: #111827; color: #e5e7eb; font: 12px system-ui, sans-serif; margin: 16px; }
+#bar { position: relative; background: #1f2937; border-radius: 12px; margin: 16px 0; }
+.tile { position: absolute; bottom: 0; border: 1px solid #4b5563; border-radius: 6px; box-sizing: border-box; cursor: pointer; }
+.tile .icon { display: flex; align-items: center; justify-content: center; color: #fff; opacity: .9; border-radius: 4px; overflow: hidden; }
+.tile .kind { font-size: 9px; opacity: .8; }
+.tile .tlabel { color: #fff; text-align: center; white-space: nowrap; overflow: hidden; line-height: 1.1; opacity: .9; }
+.tile.changed { outline: 2px solid #fb9231; }
+.tile.added { outline: 2px solid #22c55e; }
+.gline { position: absolute; left: -8px; right: -8px; height: 0; border-top: 1px dashed #facc15; pointer-events: none; }
+#panel { position: fixed; top: 12px; right: 12px; width: 330px; max-height: 85vh; overflow: auto; background: #030712; border: 1px solid #374151; border-radius: 8px; padding: 10px; font: 11px ui-monospace, monospace; white-space: pre-wrap; }
+.controls label { margin-right: 12px; }
+.sel { outline: 2px solid #fff !important; }
+.verdict-ok { color: #22c55e; }
+.verdict-bad { color: #f87171; }
+.hist { margin-top: 8px; border-top: 1px solid #374151; padding-top: 6px; }
+.hist div { cursor: pointer; padding: 1px 0; }
+.hist div:hover { color: #fff; }
+#viewing { color: #facc15; }
+button { background: #1f2937; color: #e5e7eb; border: 1px solid #4b5563; border-radius: 6px; padding: 2px 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>Docky Inspector <span id="live">●</span> <span id="viewing"></span></h2>
+<div id="verdicts"></div>
+<div class="controls" style="margin-top:8px" id="guides"></div>
+<div id="bar"></div>
+<div id="panel">waiting for snapshot…</div>
+<script src="/app.js"></script>
+</body>
+</html>
