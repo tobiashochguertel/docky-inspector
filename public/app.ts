@@ -335,6 +335,7 @@ function renderMeta(env: Envelope): void {
       };
       viewSnapshotId = Number(id);
       document.getElementById("viewing")!.textContent = `— viewing #${id} (read-only)`;
+      (document.getElementById("live-btn") as HTMLButtonElement).style.display = "";
       renderBar(snap.data, [], []);
     };
   });
@@ -384,6 +385,7 @@ function initPanel(): void {
   document.getElementById("live-btn")!.onclick = () => {
     viewSnapshotId = null;
     document.getElementById("viewing")!.textContent = "";
+    (document.getElementById("live-btn") as HTMLButtonElement).style.display = "none";
   };
   head.addEventListener("pointerdown", (down) => {
     down.preventDefault();
