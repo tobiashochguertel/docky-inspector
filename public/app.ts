@@ -414,19 +414,54 @@ function initPanel(): void {
   });
 }
 
+const TOGGLE_STATE_KEY = "docky-inspector-toggles";
+
+function loadToggleState(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(TOGGLE_STATE_KEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
+function saveToggleState(): void {
+  try {
+    const state: Record<string, boolean> = {};
+    document.querySelectorAll<HTMLInputElement>("input.guide").forEach((cb) => {
+      state[cb.dataset.guide!] = cb.checked;
+    });
+    document.querySelectorAll<HTMLInputElement>("input.view").forEach((cb) => {
+      state[cb.dataset.view!] = cb.checked;
+    });
+    localStorage.setItem(TOGGLE_STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* private mode */
+  }
+}
+
 function initControls(): void {
   initPanel();
+  const saved = loadToggleState();
+  for (const [id, on] of Object.entries(view)) {
+    if (typeof saved[id] === "boolean") view[id as ViewId] = saved[id];
+  }
   document.getElementById("guides")!.innerHTML =
-    GUIDES.map((g) => `<label><input type="checkbox" class="guide" data-guide="${g.id}" checked> ${g.label}</label>`).join("") +
+    GUIDES.map(
+      (g) => `<label><input type="checkbox" class="guide" data-guide="${g.id}"${saved[g.id] ?? true ? " checked" : ""}> ${g.label}</label>`,
+    ).join("") +
     VIEW_TOGGLES.map(
-      (t) => `<label><input type="checkbox" class="view" data-view="${t.id}"${t.on ? " checked" : ""}> ${t.label}</label>`,
+      (t) => `<label><input type="checkbox" class="view" data-view="${t.id}"${(saved[t.id] ?? t.on) ? " checked" : ""}> ${t.label}</label>`,
     ).join("");
   document.querySelectorAll<HTMLInputElement>("input.guide").forEach((cb) => {
-    cb.onchange = applyGuideVisibility;
+    cb.onchange = () => {
+      applyGuideVisibility();
+      saveToggleState();
+    };
   });
   document.querySelectorAll<HTMLInputElement>("input.view").forEach((cb) => {
     cb.onchange = () => {
       view[cb.dataset.view as ViewId] = cb.checked;
+      saveToggleState();
       lastSig = "";
     };
   });
