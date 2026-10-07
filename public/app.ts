@@ -283,9 +283,6 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
     `<details${groupOpen(name, fallback) ? " open" : ""} data-group="${name}"><summary>${name}</summary>${inner}</details>`;
   return (
     box +
-    (iconSrcFor(t)
-      ? `<div class="prev"><img src="${iconSrcFor(t)}" onerror="this.parentElement.style.display='none'" alt=""></div>`
-      : "") +
     `<div class="props">` +
     group("Box", true, rows([
       ["frame", `${f(x0)} … ${f(x1)} (w ${f(t.w)}, h ${f(t.h)})`],
@@ -299,7 +296,9 @@ function tileInspector(tiles: LayoutTile[], i: number): string {
       ["id", t.id],
       ["kind", t.kind],
       ["section", sectionOf(t.kind)],
-    ])) +
+    ]) + (iconSrcFor(t)
+      ? `<div class="prev"><img src="${iconSrcFor(t)}" onerror="this.parentElement.style.display='none'" alt=""></div>`
+      : "")) +
     group("Label", true, rows([
       ["text", t.label || "(none)"],
       ["placement", meta?.placement ?? "?"],
