@@ -184,7 +184,7 @@ function selectTile(tiles: LayoutTile[], i: number): void {
   const t = tiles[i];
   const n = tiles[i + 1];
   const gap = n ? `${gapBetween(t, n).toFixed(1)}pt` : "—";
-  document.getElementById("panel")!.textContent =
+  document.getElementById("metrics")!.textContent =
     `id: ${t.id}\nkind: ${t.kind}\nw×h: ${t.w}×${t.h}\ncenter: ${t.c}\nlabel: ${t.label || "(none)"}\ngap→next: ${gap}`;
 }
 
@@ -195,18 +195,11 @@ function renderMeta(env: Envelope): void {
     `gaps: <span class="${v.gapsOk ? "verdict-ok" : "verdict-bad"}">${esc(v.gaps)}</span> · ` +
     `${env.data.tiles.length} tiles · snapshot ${esc(env.mtime)}` +
     (v.unlabeled.length > 0 ? ` · unlabeled: ${esc(v.unlabeled.join(", "))}` : "");
-  const panel = document.getElementById("panel")!;
   const hist = env.history
     .map((h) => `<div data-h="${h.id}">${esc(h.time)} — ${esc(h.summary)}</div>`)
     .join("");
-  panel.innerHTML =
-    `<div><button id="live-btn">● back to live</button></div>` +
-    `<div class="hist">${hist || "no history yet"}</div>`;
-  document.getElementById("live-btn")!.onclick = () => {
-    viewSnapshotId = null;
-    document.getElementById("viewing")!.textContent = "";
-  };
-  panel.querySelectorAll("[data-h]").forEach((node) => {
+  document.getElementById("hist")!.innerHTML = hist || "no history yet";
+  document.getElementById("hist")!.querySelectorAll("[data-h]").forEach((node) => {
     (node as HTMLElement).onclick = async () => {
       const id = (node as HTMLElement).dataset.h!;
       const snap = (await (await fetch(`/api/snapshot?id=${id}`)).json()) as {
@@ -242,7 +235,58 @@ async function poll(): Promise<void> {
   setTimeout(poll, 500);
 }
 
+const PANEL_POS_KEY = "docky-inspector-panel-pos";
+
+/** Draggable metrics modal: drag by the header, position persists. */
+function initPanel(): void {
+  const panel = document.getElementById("panel")!;
+  const head = document.getElementById("panel-head")!;
+  try {
+    const saved = JSON.parse(localStorage.getItem(PANEL_POS_KEY) ?? "null") as {
+      x: number;
+      y: number;
+    } | null;
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+      panel.style.left = `${saved.x}px`;
+      panel.style.top = `${saved.y}px`;
+      panel.style.right = "auto";
+    }
+  } catch {
+    /* fresh start */
+  }
+  document.getElementById("live-btn")!.onclick = () => {
+    viewSnapshotId = null;
+    document.getElementById("viewing")!.textContent = "";
+  };
+  head.addEventListener("pointerdown", (down) => {
+    down.preventDefault();
+    head.setPointerCapture(down.pointerId);
+    const rect = panel.getBoundingClientRect();
+    const dx = down.clientX - rect.left;
+    const dy = down.clientY - rect.top;
+    const move = (ev: PointerEvent) => {
+      const x = Math.min(Math.max(0, ev.clientX - dx), window.innerWidth - 60);
+      const y = Math.min(Math.max(0, ev.clientY - dy), window.innerHeight - 40);
+      panel.style.left = `${x}px`;
+      panel.style.top = `${y}px`;
+      panel.style.right = "auto";
+    };
+    const up = () => {
+      head.removeEventListener("pointermove", move);
+      head.removeEventListener("pointerup", up);
+      try {
+        localStorage.setItem(PANEL_POS_KEY, JSON.stringify({ x: panel.offsetLeft, y: panel.offsetTop }));
+      } catch {
+        /* private mode */
+      }
+    };
+    head.addEventListener("pointermove", move);
+    head.addEventListener("pointerup", up);
+  });
+}
+
 function initControls(): void {
+  initPanel();
   document.getElementById("guides")!.innerHTML =
     GUIDES.map((g) => `<label><input type="checkbox" class="guide" data-guide="${g.id}" checked> ${g.label}</label>`).join("") +
     VIEW_TOGGLES.map(
