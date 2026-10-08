@@ -41,7 +41,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 <h2>0 · The nesting, from outside in</h2>
 <p class="crumb">the bar <b>▸</b> a section <b>▸</b> a tile <b>▸</b> the icon slot <b>▸</b> the painted artwork</p>
 <div id="f-zoom"></div>
-<p class="cap">Each panel shows the highlighted region of the panel before it, drawn larger. Sections 1–4 explain one level each.</p>
+<p class="cap">Each panel magnifies the highlighted region of the panel before it; the last panel is the innermost level, so nothing is highlighted there. Sections 1–4 explain one level each, §5 the tile variants and §6 the inspector tools.</p>
 
 <div class="legend">
   <h3>Legend</h3>
@@ -300,18 +300,16 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     c += tile(43, base - u(T.h), { run: true });
     c += `<g transform="translate(43,${base - u(T.h)})">${slotRing()}</g>`;
     p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle") + chip(PW / 2, base + 30, "running indicator (optional)", C.did, "middle"));
-    // panel 4 — the icon slot, focus = the painted artwork
+    // panel 4 — the icon slot, innermost: what is painted inside it.
+// No zoom ring here: it is the last panel, so there is nothing to zoom into.
+// The generic case is an app icon, whose artwork fills the slot — the smaller
+// variants (folder mosaic, minimized card) belong to §5/§6, not this overview.
     const sl = 120, sx = 33, sy = base - sl;
-    const pw = u(T.paintFolder[0]), ph = u(T.paintFolder[1]);
-    const pbx = sx + (sl - pw) / 2, pby = sy + (sl - ph) / 2;
-    let d = focusBg(pbx, pby, pw, ph);
-    d += `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
-    d += art(sx, sy, sl, "folder", T.paintFolder);
-    d += focus(pbx, pby, pw, ph);
-    /* chip names the part, leader wears the chip's colour */
+    let d = `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
+    d += `<rect x="${sx + 1}" y="${sy + 1}" width="${sl - 2}" height="${sl - 2}" rx="9" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="1.2"/>`;
     d += chip(sx + sl / 2, base - sl - 32, "painted artwork", C.paint, "middle");
-    d += ln(sx + sl / 2, base - sl - 15, sx + sl / 2, pby, C.paint);
-    p.push(d + txt(PW / 2, base + 18, "the icon slot", C.struct, "middle"));
+    d += ln(sx + sl / 2, base - sl - 15, sx + sl / 2, sy, C.paint);
+    p.push(d + txt(PW / 2, base + 18, "the icon slot", C.struct, "middle") + chip(PW / 2, base + 30, "app icon: painted = slot", C.did, "middle"));
     let body = "";
     p.forEach((panel, i) => {
       body += `<g transform="translate(${i * (PW + GAP)},0)">${panel}</g>`;
