@@ -43,6 +43,7 @@ table.fix th { color: #94a3b8; font-weight: 500; border-bottom-color: #334155; }
 table.fix td.n { color: #f2e3cc; white-space: nowrap; }
 table.fix td.f { color: #64748b; }
 table.fix td.c { white-space: nowrap; }
+table.fix td .where { color: #c4b5fd; font-size: 10px; }
 .tagfix, .tagcfg { font-size: 10px; padding: 1px 5px; border-radius: 3px; }
 .tagfix { color: #fdba74; border: 1px solid #7c2d12; }
 .tagcfg { color: #4ade80; border: 1px solid #14532d; }
@@ -185,6 +186,24 @@ clipped to the box inset <code>sideInset</code> per side, so long names truncate
 <li><b>Overlays</b> — running indicator and notification badge float above the tile and take <em>no</em> layout space.</li>
 </ul>
 <details class="livev"><summary>live values — measured from your running Docky</summary><table class="kv" id="live-inside"></table></details>
+</div>
+
+<div class="sec">
+<h2><span class="sw" id="sw-label"></span>4b · The label row, magnified — and where it can sit</h2>
+<p class="crumb">level 4 · zoomed out from §4, then the four placements</p>
+<div id="f-labeldetail"></div>
+<ul>
+<li>Zoomed, the label row resolves into three parts: the fixed gap <var>g</var>, the text, and the
+<code>sideInset</code> kept on each side of the text. The inset is why two long names truncate instead of running
+into each other even at zero tile spacing.</li>
+<li>The text height comes from the font size — <code>ceil(font × 1.2)</code> — and <code>l = g + text</code> is
+identical on every tile, which is what keeps the rows aligned.</li>
+<li><b>Placement</b> only decides <em>where</em> the row goes, never its size. Below and above keep the tile's width
+at <var>w</var> and add the row's height; leading and trailing add the row's <em>width</em> instead, so those tiles
+become wider than they are tall — capped by the fixed <code>maxSidewaysLabelWidth</code> so one long name cannot
+stretch the dock.</li>
+</ul>
+<details class="livev"><summary>live values — measured from your running Docky</summary><table class="kv" id="live-label"></table></details>
 </div>
 
 <div class="sec">
@@ -524,12 +543,14 @@ same structure at three zoom levels.</li>
      leader lines crossed the other tile's box and became unreadable.
      Each row keeps its own dimension stack, callout column and formulas. */
   function figInside() {
-    const S = 1.85;
+    const S = 2.05;
     const P = (pt) => u(pt) * S;
     const tw = P(G.w), th = P(G.h), ic = P(G.icon), lb = P(G.labelRow);
     const pv = P(G.vPad), gp = P(G.gap), si = P(G.sideInset), ip = P(G.iconPad);
     const ch = P(G.chromeInset);                       // fixed: floor(w * 3/32)
-    const dotR = P(G.m.indicatorThickness / 2);
+    /* TileView scales the indicator with the tile size: 4x and 12x of this */
+    const sc = Math.max(0.5, Math.min(1, G.w / 48));
+    const dotR = P(G.m.indicatorThickness * sc / 2);
     const x = 132, cx = x + tw + 128;
     const band = (bx, by, bw, bh) => `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="4 3"/>`;
     const label = (y, tx, ty, tw2, th2, cid) =>
@@ -549,17 +570,26 @@ same structure at three zoom levels.</li>
     let body = "";
     /* ================= row 1: app tile ================= */
     const yA = 84;
-    const bxA = x + ip, byA = yA + pv, bwA = tw - ip * 2, bhA = th - pv * 2;
+    /* frame = p (top) + i + p (between icon and label) + l — so only the
+       TOP padding is removed to get the content box; there is no padding
+       below the label row. */
+    const bxA = x + ip, byA = yA + pv, bwA = tw - ip * 2, bhA = th - pv;
     const iA = { x: bxA + (bwA - ic) / 2, y: byA };
     const lA = { x: iA.x, y: byA + bhA - lb, w: ic, h: lb };
     const dotA = { x: x + tw / 2, y: iA.y + ic + pv / 2 };
     body += txt(x + tw / 2, yA - 14, "app tile — inset only by iconPad", "#e5e7eb", "middle", 11);
-    body += band(x, yA, tw, pv) + band(x, iA.y + ic, tw, pv);
+    body += band(x, yA, tw, pv) + band(x, iA.y + ic, tw, pv);   // top, and between icon + label
     if (ip > 0) body += band(x, yA + pv, ip, bhA) + band(x + tw - ip, yA + pv, ip, bhA);
     body += `<rect x="${r1(iA.x)}" y="${r1(iA.y)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
     body += `<rect x="${r1(lA.x)}" y="${r1(lA.y)}" width="${r1(lA.w)}" height="${r1(lA.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
     body += label(yA, lA.x + si, lA.y + gp, lA.w - si * 2, lA.h - gp, "clip-a");
     body += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
+    /* the pill alternative: same thickness, ◆ indicator length long */
+    const pill = { x: x + tw - P(G.m.indicatorLength * sc) - 6, y: dotA.y - dotR, w: P(G.m.indicatorLength * sc), h: dotR * 2 };
+    body += `<rect x="${r1(pill.x)}" y="${r1(pill.y)}" width="${r1(pill.w)}" height="${r1(pill.h)}" rx="${r1(dotR)}" fill="${C.run}"/>`;
+    /* ◆ offset: the indicator sits baseInward below the icon's bottom edge */
+    const offPx = pv / 2 - dotR;
+    if (offPx > 1) body += `<rect x="${r1(pill.x)}" y="${r1(iA.y + ic)}" width="${r1(pill.w)}" height="${r1(offPx)}" fill="${C.didFill}" stroke="${C.did}" stroke-opacity=".7" stroke-dasharray="2 2"/>`;
     body += `<circle cx="${r1(iA.x + ic - P(4))}" cy="${r1(iA.y + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
     body += `<rect x="${x}" y="${yA}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
     /* dimension stack + callouts for row 1 */
@@ -579,6 +609,9 @@ same structure at three zoom levels.</li>
       ["◆ gap g inside l", C.did, lA.y + gp * 0.6, x + tw, lA.y + gp * 0.6],
       ["◆ side inset / side", C.did, lA.y + gp + (lA.h - gp) * 0.5, lA.x + si, lA.y + gp + (lA.h - gp) * 0.5],
       ["◆ indicator thickness", C.did, dotA.y, dotA.x, dotA.y],
+      ["◆ indicator length (pill)", C.did, dotA.y, pill.x + pill.w / 2, dotA.y],
+      ["◆ indicator offset", C.did, iA.y + ic + offPx / 2, pill.x, iA.y + ic + offPx / 2],
+      ["label font size", C.warn, lA.y + lb * 0.5, lA.x + lA.w / 2, lA.y + lA.h * 0.5],
       ["notification badge", C.struct, iA.y + P(4), iA.x + ic - P(4), iA.y + P(4)],
       ["iconPad (configurable)", C.pad, yA + pv + ic * 0.9, x + ip + 1, yA + pv + ic * 0.9],
     ]);
@@ -614,14 +647,96 @@ same structure at three zoom levels.</li>
     return svg(cx + 420, yB + th + 150, body);
   }
 
+  /* ---------- figure 4b: label row magnified + the four placements ---- */
+  function figLabelDetail() {
+    /* row A: the label row at 4x the dock scale */
+    const Z = 4 * 2.5;                        // px per pt for the zoom row
+    const rowW = G.w * Z, lb = G.labelRow * Z, gp = G.gap * Z, si = G.sideInset * Z;
+    const xA = 132, yA = 96;
+    let s = "";
+    const box = (bx, by, bw, bh, fill, stroke, dash) =>
+      `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${fill}" stroke="${stroke}" stroke-dasharray="${dash}"/>`;
+    /* the row, its gap band, and the text clip box */
+    s += box(xA, yA, rowW, lb, C.labelFill, C.label, "7 4");
+    s += box(xA, yA, rowW, gp, "rgba(196,181,253,0.35)", C.did, "3 2");
+    const tx = xA + si, tw = rowW - si * 2, ty = yA + gp, th = lb - gp;
+    s += `<defs><clipPath id="clip-zoom"><rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw)}" height="${r1(th)}"/></clipPath></defs>`;
+    s += box(tx, ty, tw, th, "none", C.artStroke, "0");
+    s += `<rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw)}" height="${r1(th)}" fill="none" stroke="${C.artStroke}" stroke-width="1.2"/>`;
+    /* a short name fits, a long one is clipped by the side insets */
+    const fs = G.labelText * Z / 0.72;
+    s += `<g clip-path="url(#clip-zoom)"><text x="${r1(tx)}" y="${r1(ty + th * 0.82)}" font-size="${r1(fs)}" fill="#0b1220">${esc(G.sampleLabel ?? "Finder")}</text>` +
+      `<text x="${r1(tx)}" y="${r1(ty + th * 0.82)}" font-size="${r1(fs)}" fill="#0b1220" opacity=".45" transform="translate(${r1(tw * 0.42)},0)">${esc(G.longLabel ?? "A Very Long Application Name")}</text></g>`;
+    s += txt(xA + rowW / 2, yA - 14, "label row l, magnified 4×", "#e5e7eb", "middle", 11);
+    /* dimensions on the zoom row */
+    s += dim(xA, yA + lb + 40, gp, "◆ g");
+    s += dim(tx, yA + lb + 40, si, "◆");
+    s += vdim(xA - 44, yA, gp, "◆", C.did);
+    s += vdim(xA - 44, yA + gp, th, "text", C.warn);
+    const cxA = xA + rowW + 150;
+    s += chip(cxA, yA - 6, ["◆ gap g = ", "2 pt, fixed"], C.did, "start", 11, [xA + gp / 2, yA + gp / 2]);
+    s += chip(cxA, yA + 22, ["◆ side inset / side = ", "2 pt"], C.did, "start", 11, [tx, ty + th / 2]);
+    s += chip(cxA, yA + 50, ["text height = ", "ceil(font × 1.2)"], C.warn, "start", 11, [xA + rowW * 0.6, ty + th / 2]);
+    s += chip(cxA, yA + 78, ["l = ", "g + text, same on every tile"], "#94a3b8", "start", 11, [xA + rowW / 2, ty + th / 2]);
+    /* row B: the four placements, to scale.
+       Below/above: the row is as wide as the icon and adds height.
+       Leading/trailing: the row becomes a side slot that adds width,
+       capped at maxSidewaysLabelWidth — the cap is drawn as a dashed
+       continuation so the worst case is visible. */
+    const S2 = 1.5;
+    const P = (pt) => u(pt) * S2;
+    const capW = G.m.maxSidewaysLabelWidth;
+    const typical = 26;                        // example measured name width
+    const yB = yA + 236;
+    const icw = P(G.icon), lbh = P(G.labelRow), pv = P(G.vPad);
+    const labW = P(G.icon);                    // below / above
+    const sideW = P(typical), capPx = P(capW);
+    const variants = [
+      ["below", G.placement === "below", P(G.w), P(G.h), "p | i | p | l"],
+      ["above", G.placement === "above", P(G.w), P(G.h), "l | p | i | p"],
+      ["leading", G.placement === "leading", P(G.w + typical), P(G.h - G.labelRow), "l | p | i | p"],
+      ["trailing", G.placement === "trailing", P(G.w + typical), P(G.h - G.labelRow), "p | i | p | l"],
+    ];
+    /* two lines of two, so nothing is scaled down to fit the column */
+    let maxX = xA;
+    variants.forEach(([name, active, vw, vh, stack], vi) => {
+      const row = vi < 2 ? 0 : 1;
+      const inRow = vi % 2;
+      /* row 0 holds the two w-wide tiles, row 1 the two (w + slot)-wide ones */
+      const pitch = row === 0 ? P(G.w) + 64 : P(G.w + typical) + 64;
+      const x = xA + inRow * pitch;
+      const yy = yB + row * (P(G.h) + 104);
+      const side = name === "leading" || name === "trailing";
+      const iconX = side && name === "leading" ? x + sideW + pv : x + (vw - icw) / 2;
+      const iconY = side ? yy + (vh - icw) / 2 : yy + pv;
+      const lrW = side ? sideW : labW;
+      const lrX = side ? (name === "leading" ? x : x + vw - sideW) : x + (vw - labW) / 2;
+      const lrY = side ? yy + (vh - lbh) / 2 : (name === "above" ? yy + pv : yy + pv + icw + pv);
+      s += `<rect x="${r1(x)}" y="${r1(yy)}" width="${r1(vw)}" height="${r1(vh)}" rx="4" fill="none" stroke="${active ? C.info : C.frame}" stroke-opacity="${active ? 0.85 : 0.45}" stroke-dasharray="4 3"/>`;
+      s += `<rect x="${r1(iconX)}" y="${r1(iconY)}" width="${r1(icw)}" height="${r1(icw)}" rx="${r1(icw * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="6 4"/>`;
+      s += `<rect x="${r1(lrX)}" y="${r1(lrY)}" width="${r1(lrW)}" height="${r1(lbh)}" rx="2" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="6 4"/>`;
+      if (side) s += dim(lrX, yy + vh + 46, lrW, `slot ≤ ◆ ${capW} pt`);
+      s += txt(x + vw / 2, yy + vh + 20, name, active ? "#93c5fd" : "#94a3b8", "middle", 11);
+      s += txt(x + vw / 2, yy + vh + 35, stack, "#64748b", "middle", 10);
+      maxX = Math.max(maxX, x + vw);
+    });
+    /* notes under both rows, so they never sit on a tile */
+    const noteY = yB + 2 * (P(G.h) + 104) + 26;
+    s += chip(xA, noteY, ["below / above ", "add height, width = w"], "#94a3b8", "start", 11);
+    s += chip(xA + 300, noteY, ["leading / trailing ", "add width"], "#94a3b8", "start", 11);
+    s += chip(xA + 560, noteY, ["sideways slot = ", "min(measured, ◆ cap)"], C.did, "start", 11);
+    s += txt(xA, yB - 14, "placement — same row, different edge", "#e5e7eb", "start", 11);
+    return svg(xA + 2 * (P(G.w + typical) + 64) + 40, noteY + 40, s);
+  }
+
   /* ---------- figure 6: variants ---------- */
   function figVariants() {
     const sc = 0.82, tw = u(G.w) * sc, th = u(G.h) * sc, gap = 14, n = 7;
     const cardW = tw + 22, W = n * cardW + (n - 1) * gap, H = th + 108;
     const items = [
-      ["App folder", { kind: "folder", paint: G.paintFolder }, ["background hugs", "the mosaic"]],
-      ["Minimized", { kind: "min", paint: G.paintMin }, ["preview card", "+ app badge"]],
-      ["No permission", { kind: "minph" }, ["fallback symbol,", "same slot"]],
+      ["App folder", { kind: "folder", paint: G.paintFolder }, ["◆ mosaic " + G.m.mosaicScale, "◆ chrome " + G.m.folderChromeFraction]],
+      ["Minimized", { kind: "min", paint: G.paintMin }, ["◆ card " + G.m.cardHeightScale, "◆ badge " + G.m.badgeScale]],
+      ["No permission", { kind: "minph" }, ["◆ same scales,", "fallback symbol"]],
       ["Launchpad", { kind: "launchpad" }, ["fixed bundle id,", "icon overridable"]],
       ["Trash", { kind: "trash" }, ["ordinary tile,", "never labeled"]],
       ["Widget", { kind: "widget" }, ["keeps the label", "row, draws none"]],
@@ -691,6 +806,7 @@ same structure at three zoom levels.</li>
     sections: `<svg width="26" height="18" viewBox="0 0 26 18"><rect x="1" y="3" width="11" height="12" rx="2" fill="none" stroke="#93c5fd" stroke-dasharray="3 2"/><rect x="3" y="6" width="4" height="6" rx="1" fill="#f2e3cc"/><rect x="8" y="6" width="4" height="6" rx="1" fill="#f2e3cc"/><line x1="14" y1="5" x2="14" y2="13" stroke="#6b7280"/><rect x="17" y="3" width="8" height="12" rx="2" fill="none" stroke="#93c5fd" stroke-dasharray="3 2"/><rect x="19" y="6" width="4" height="6" rx="1" fill="#f2e3cc"/></svg>`,
     tiles: `<svg width="26" height="18" viewBox="0 0 26 18"><rect x="2" y="2" width="10" height="14" rx="2" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="3.5" y="5" width="7" height="7" rx="2" fill="#f2e3cc"/><rect x="14" y="2" width="10" height="14" rx="2" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="15.5" y="5" width="7" height="7" rx="2" fill="#f2e3cc"/></svg>`,
     inside: `<svg width="26" height="18" viewBox="0 0 26 18"><rect x="1" y="1" width="24" height="16" rx="3" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="5" y="4" width="10" height="10" rx="2" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" stroke-dasharray="3 2"/><rect x="7" y="6" width="6" height="6" rx="1" fill="#f2e3cc"/><rect x="18" y="4" width="5" height="2.5" rx="1" fill="rgba(250, 204, 21, 0.3)" stroke="#facc15"/></svg>`,
+    label: `<svg width="26" height="18" viewBox="0 0 26 18"><rect x="3" y="1" width="8" height="8" rx="2" fill="#f2e3cc"/><rect x="14" y="1" width="8" height="8" rx="2" fill="#f2e3cc"/><rect x="3" y="12" width="19" height="4" rx="1.5" fill="rgba(250,204,21,0.3)" stroke="#facc15" stroke-dasharray="2 2"/></svg>`,
     fixed: `<svg width="26" height="18" viewBox="0 0 26 18"><path d="M13 2 L13 6 M13 12 L13 16 M2 9 L6 9 M20 9 L24 9" stroke="#c4b5fd" stroke-width="1.4"/><circle cx="13" cy="9" r="2.6" fill="none" stroke="#c4b5fd" stroke-width="1.4"/></svg>`,
     variants: `<svg width="26" height="18" viewBox="0 0 26 18"><rect x="1" y="2" width="7" height="14" rx="2" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="9" y="2" width="7" height="14" rx="2" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="10.5" y="5" width="4" height="4" rx="1" fill="#f2e3cc"/><rect x="18" y="2" width="7" height="14" rx="2" fill="none" stroke="#cbd5e1" stroke-dasharray="3 2"/><rect x="19.5" y="5" width="4" height="4" rx="1" fill="#f2e3cc"/></svg>`,
     inspector: `<svg width="26" height="18" viewBox="0 0 26 18"><path d="M2 4 H24 M2 9 H24 M2 14 H24" stroke="#93c5fd" stroke-dasharray="3 2"/><circle cx="8" cy="4" r="1.6" fill="#f2e3cc"/><circle cx="16" cy="9" r="1.6" fill="#f2e3cc"/></svg>`,
@@ -763,32 +879,44 @@ same structure at three zoom levels.</li>
       ["label placement", G.placement, "docky.tileLabelPlacement"],
     ]);
   }
+  function liveLabel() {
+    return kv([
+      ["label font size", `${pt(G.fontSize)}`, "preference"],
+      ["text height", pt(G.labelText), `ceil(${pt(G.fontSize)} × 1.2)`],
+      ["◆ gap g", pt(G.gap), "TileLabelMetrics.spacing"],
+      ["label row l", pt(G.labelRow), "g + text"],
+      ["◆ side inset / side", pt(G.sideInset), "TileLabelMetrics.labelSideInset"],
+      ["◆ sideways cap", pt(G.m.maxSidewaysLabelWidth), "TileLabelMetrics.maxSidewaysLabelWidth"],
+      ["placement", G.placement, "preference"],
+    ]);
+  }
   const CONST = [
-    ["tile width w", "preference", "docky.dockSettings.tileSize", "slide the tile size in Settings"],
-    ["tile spacing s", "preference", "docky.tileSpacing", "gap between neighbouring frames"],
-    ["tile vertical padding p", "preference", "docky.tileVerticalPadding", "reserved above icon and below label row"],
-    ["tile icon padding", "preference", "docky.tileIconPadding", "inset around the icon inside the slot"],
-    ["label font size", "preference", "docky.tileLabelFontSize", "drives the label row height"],
-    ["label placement", "preference", "docky.tileLabelPlacement", "below / above / leading / trailing"],
-    ["icon↔label gap g", "fixed", "TileLabelMetrics.spacing", "compiled-in gap between icon and label row"],
-    ["label text inset / side", "fixed", "TileLabelMetrics.labelSideInset", "so neighbouring labels never touch"],
-    ["sideways label cap", "fixed", "TileLabelMetrics.maxSidewaysLabelWidth", "one long name cannot stretch the dock"],
-    ["folder chrome margin", "fixed", "TileLabelMetrics.folderChromeMarginFraction", "fraction of the tile's smaller side"],
-    ["folder mosaic scale", "fixed", "AppFolderTileView", "each mini icon, as a fraction of the smaller side"],
-    ["minimized card height", "fixed", "MinimizedWindowTileView", "fraction of the slot height"],
-    ["minimized badge scale", "fixed", "MinimizedWindowTileView", "app badge on the card corner"],
-    ["indicator thickness", "fixed", "TileView.runningIndicatorThickness", "dot diameter, scaled by the tile size"],
-    ["indicator length", "fixed", "TileView.runningIndicatorLength", "pill length, scaled by the tile size"],
-    ["indicator inset", "fixed", "TileView.runningIndicatorInset", "distance kept from the tile edge"],
-    ["divider width d", "fixed", "—", "section separator width"],
+    ["tile width w", "preference", "docky.dockSettings.tileSize", "slide the tile size in Settings", "§1 width, §4 w"],
+    ["tile spacing s", "preference", "docky.tileSpacing", "gap between neighbouring frames", "§1 spacing, §3 spacing"],
+    ["tile vertical padding p", "preference", "docky.tileVerticalPadding", "reserved above icon and below icon", "§4 row 1 (p, p)"],
+    ["tile icon padding", "preference", "docky.tileIconPadding", "inset around the icon inside the frame", "§4 both rows (0 today)"],
+    ["label font size", "preference", "docky.tileLabelFontSize", "drives the label row height", "§4 row 1 (text height)"],
+    ["label placement", "preference", "docky.tileLabelPlacement", "below / above / leading / trailing", "§4 — only below drawn"],
+    ["icon↔label gap g", "fixed", "TileLabelMetrics.spacing", "compiled-in gap above the label text", "§4 row 1 (g band)"],
+    ["label text inset / side", "fixed", "TileLabelMetrics.labelSideInset", "so neighbouring labels never touch", "§4 row 1 (clip box)"],
+    ["sideways label cap", "fixed", "TileLabelMetrics.maxSidewaysLabelWidth", "one long name cannot stretch the dock", "§4 — sideways not drawn"],
+    ["chrome inset", "fixed", "TileLayoutMetrics.chromeInset", "widget-chrome tiles, all four sides", "§4 row 2 (◆ chrome)"],
+    ["folder chrome margin", "fixed", "TileLabelMetrics.folderChromeMarginFraction", "fraction of the tile's smaller side", "§6 folder card"],
+    ["folder mosaic scale", "fixed", "AppFolderTileView", "each mini icon, as a fraction of the smaller side", "§6 folder card"],
+    ["minimized card height", "fixed", "MinimizedWindowTileView", "fraction of the slot height", "§6 minimized card"],
+    ["minimized badge scale", "fixed", "MinimizedWindowTileView", "app badge on the card corner", "§6 minimized card"],
+    ["indicator thickness", "fixed", "TileView.runningIndicatorThickness", "dot diameter, scaled by the tile size", "§4 row 1 (dot) + row 2"],
+    ["indicator length", "fixed", "TileView.runningIndicatorLength", "pill length, scaled by the tile size", "§4 row 1 (pill)"],
+    ["indicator inset / offset", "fixed", "TileView.runningIndicatorInset", "padding around the indicator; offset below the icon", "§4 row 1 (◆ offset)"],
+    ["divider width d", "fixed", "—", "section separator width", "§2 divider d"],
   ];
   function constTable() {
     const tag = (k) => k === "preference" ? `<span class="tagcfg">configurable</span>`
       : k === "fixed" ? `<span class="tagfix">fixed in code</span>` : `<span class="tagder">derived</span>`;
-    return `<tr><th>constant</th><th>status</th><th>live value</th><th>defined in</th><th>why</th></tr>` +
-      CONST.map(([name, status, src, why]) => {
+    return `<tr><th>constant</th><th>status</th><th>live value</th><th>defined in</th><th>why</th><th>drawn in</th></tr>` +
+      CONST.map(([name, status, src, why, where]) => {
         const v = liveValueOf(name);
-        return `<tr><td>${esc(name)}</td><td class="c">${tag(status)}</td><td class="n">${v}</td><td class="f">${esc(src)}</td><td class="f">${esc(why)}</td></tr>`;
+        return `<tr><td>${esc(name)}</td><td class="c">${tag(status)}</td><td class="n">${v}</td><td class="f">${esc(src)}</td><td class="f">${esc(why)}</td><td class="c"><span class="where">${esc(where)}</span></td></tr>`;
       }).join("");
   }
   function liveValueOf(name) {
@@ -799,12 +927,13 @@ same structure at three zoom levels.</li>
       "label placement": G.placement,
       "icon↔label gap g": pt(m.iconLabelGap), "label text inset / side": pt(m.sideInset),
       "sideways label cap": pt(m.maxSidewaysLabelWidth),
+      "chrome inset": `${pt(m.chromeInset ?? G.chromeInset)} = floor(w × ${m.chromeInsetFraction ?? 0.09375})`,
       "folder chrome margin": `${m.folderChromeFraction} of min side`,
       "folder mosaic scale": String(m.mosaicScale), "minimized card height": String(m.cardHeightScale),
       "minimized badge scale": String(m.badgeScale),
       "indicator thickness": `${pt(m.indicatorThickness)} × scale`,
       "indicator length": `${pt(m.indicatorLength)} × scale`,
-      "indicator inset": `max(${m.indicatorMinInset}, ${pt(2)} × scale)`,
+      "indicator inset / offset": `max(${m.indicatorMinInset}, ${pt(2)} × scale)`,
       "divider width d": pt(G.divider),
     };
     return map[name] ?? "—";
@@ -821,6 +950,7 @@ same structure at three zoom levels.</li>
     document.getElementById("f-sections").innerHTML = figSections();
     document.getElementById("f-tiles").innerHTML = figTiles();
     document.getElementById("f-inside").innerHTML = figInside();
+    document.getElementById("f-labeldetail").innerHTML = figLabelDetail();
     document.getElementById("f-variants").innerHTML = figVariants();
     document.getElementById("f-guides").innerHTML = figGuides();
     document.getElementById("f-slotpainted").innerHTML = figSlotPainted();
@@ -838,6 +968,7 @@ same structure at three zoom levels.</li>
   document.getElementById("live-tiles").innerHTML = liveTiles();
   document.getElementById("live-inside").innerHTML = liveInside();
   document.getElementById("live-variants").innerHTML = liveVariants();
+  document.getElementById("live-label").innerHTML = liveLabel();
 
   try {
     const env = await (await fetch("/api/layout")).json();
@@ -867,6 +998,7 @@ same structure at three zoom levels.</li>
     document.getElementById("live-tiles").innerHTML = liveTiles();
     document.getElementById("live-inside").innerHTML = liveInside();
     document.getElementById("live-variants").innerHTML = liveVariants();
+  document.getElementById("live-label").innerHTML = liveLabel();
     document.getElementById("u-note").textContent = `${U} px/pt`;
   } catch (e) { /* offline: figures still render from defaults */ }
 })();
