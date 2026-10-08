@@ -624,7 +624,8 @@ same structure at three zoom levels.</li>
     const lW = { x: bW.x, y: bW.y + bW.h - lb, w: bW.w, h: lb };
     const dotW = { x: x + tw / 2, y: bW.y + bW.h + ch / 2 };
     body += txt(x + tw / 2, yB - 14, "widget chrome tile — additionally inset by ◆ chrome", "#e5e7eb", "middle", 11);
-    body += band(x, yB, tw, ch + pv) + band(x, bW.y + bW.h, tw, ch);
+    /* contentInsets insets symmetrically: top AND bottom are chrome + p */
+    body += band(x, yB, tw, ch + pv) + band(x, bW.y + bW.h, tw, ch + pv);
     if (ip > 0) body += band(x, yB + ch + pv, ch + ip, bW.h) + band(x + tw - ch - ip, yB + ch + pv, ch + ip, bW.h);
     body += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h - lb)}" rx="${r1(ch)}" fill="${C.artFaint}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
     body += `<rect x="${r1(lW.x)}" y="${r1(lW.y)}" width="${r1(lW.w)}" height="${r1(lW.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
@@ -634,6 +635,7 @@ same structure at three zoom levels.</li>
     body += vdim(x - 46, yB, ch + pv, "◆", C.did);
     body += dim(x, yB + th + 46, tw, "w");
     body += dim(bW.x, yB + th + 80, bW.w, "content box");
+    body += dim(x, yB + th + 80, ch, "◆");
     body += callouts([
       ["tile frame w × h", C.struct, yB + 6, x + tw, yB + 2],
       ["◆ chrome inset (all sides)", C.did, yB + (ch + pv) * 0.5, x + tw, yB + (ch + pv) * 0.5],
