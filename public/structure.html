@@ -175,7 +175,8 @@ frame. Empty space, never painted. Note the second <var>p</var> sits <em>between
 differ: an <b>app tile</b> insets only by <code>iconPad</code>, so <code>i = w − 2·iconPad</code> and with the
 default of 0 the slot spans the frame; a <b>widget chrome tile</b> also reserves the fixed
 <code>chromeInset</code> on all four sides, so <code>content box = w − 2·(chrome + iconPad)</code> and the slot
-stops short of every edge. The left tile is your current app tile, the right one the widget variant.</li>
+stops short of every edge. The <b>top</b> drawing is your current app tile, the <b>bottom</b> one the widget
+variant.</li>
 <li><b>Painted artwork</b> — what is drawn inside the slot. For an app icon it fills the slot and the perceived gap
 comes from its transparency; for folders and minimized cards the painted box is smaller (§6).</li>
 <li><b>Label row</b> — one reservation <code>l = g + ceil(font × 1.2)</code>: the fixed gap <var>g</var> above the
@@ -519,12 +520,9 @@ same structure at three zoom levels.</li>
   }
 
   /* ---------- figure 4: inside one tile, drawn large ----------
-     Two variants side by side, because they are NOT the same:
-       left  — app tile: frame inset by padding p (vertical) + iconPad
-               (horizontal); inside the box: icon, padding p, label row l
-       right — widget chrome tile: frame inset by contentInsets — chrome
-               horizontally, chrome + p vertically — and the content box
-               is filled by the widget's own view, not a fixed-size icon */
+     Two variants, stacked in two ROWS on purpose: side by side their
+     leader lines crossed the other tile's box and became unreadable.
+     Each row keeps its own dimension stack, callout column and formulas. */
   function figInside() {
     const S = 1.85;
     const P = (pt) => u(pt) * S;
@@ -532,79 +530,88 @@ same structure at three zoom levels.</li>
     const pv = P(G.vPad), gp = P(G.gap), si = P(G.sideInset), ip = P(G.iconPad);
     const ch = P(G.chromeInset);                       // fixed: floor(w * 3/32)
     const dotR = P(G.m.indicatorThickness / 2);
-    const y = 84;
-    /* ---- app tile: full detail ---- */
-    const xA = 132;
-    const bxA = xA + ip, byA = y + pv, bwA = tw - ip * 2, bhA = th - pv * 2;
-    const iA = { x: bxA + (bwA - ic) / 2, y: byA, w: ic, h: ic };
-    const lA = { x: bxA + (bwA - ic) / 2, y: byA + bhA - lb, w: ic, h: lb };
-    let a = "";
+    const x = 132, cx = x + tw + 128;
     const band = (bx, by, bw, bh) => `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="4 3"/>`;
-    a += band(xA, y, tw, pv) + band(xA, iA.y + ic, tw, pv);
-    if (ip > 0) a += band(xA, y + pv, ip, bhA) + band(xA + tw - ip, y + pv, ip, bhA);
-    a += `<rect x="${r1(iA.x)}" y="${r1(iA.y)}" width="${r1(iA.w)}" height="${r1(iA.h)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    a += `<rect x="${r1(lA.x)}" y="${r1(lA.y)}" width="${r1(lA.w)}" height="${r1(lA.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    const txA = lA.x + si, twA = lA.w - si * 2, tyA = lA.y + gp, thA = lA.h - gp;
-    a += `<defs><clipPath id="clip-a"><rect x="${r1(txA)}" y="${r1(tyA)}" width="${r1(twA)}" height="${r1(thA)}"/></clipPath></defs>`;
-    a += `<rect x="${r1(txA)}" y="${r1(tyA)}" width="${r1(twA)}" height="${r1(thA)}" fill="none" stroke="${C.artStroke}" stroke-opacity=".85"/>`;
-    a += `<text x="${r1(lA.x + lA.w / 2)}" y="${r1(tyA + thA * 0.85)}" text-anchor="middle" font-size="${r1(P(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#clip-a)">${esc(G.sampleLabel ?? "Finder")}</text>`;
-    const dotA = { x: xA + tw / 2, y: iA.y + ic + pv / 2 };
-    a += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
-    a += `<circle cx="${r1(iA.x + ic - P(4))}" cy="${r1(iA.y + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
-    a += `<rect x="${xA}" y="${y}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    a += txt(xA + tw / 2, y - 12, "app tile", "#e5e7eb", "middle", 11);
-    /* ---- widget chrome tile: content box inset on all four sides ---- */
-    const xW = xA + tw + 104;
-    const bW = { x: xW + ch + ip, y: y + ch + pv, w: tw - (ch + ip) * 2, h: th - (ch + pv) * 2 };
-    const lW = { x: bW.x, y: bW.y + bW.h - lb, w: bW.w, h: lb };
-    let b = band(xW, y, tw, ch + pv) + band(xW, bW.y + bW.h, tw, ch);
-    if (ip > 0) b += band(xW, y + ch + pv, ch + ip, bW.h) + band(xW + tw - ch - ip, y + ch + pv, ch + ip, bW.h);
-    /* the widget's own view fills the content box above the label row */
-    b += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h - lb)}" rx="${r1(ch)}" fill="${C.artFaint}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    b += `<rect x="${r1(lW.x)}" y="${r1(lW.y)}" width="${r1(lW.w)}" height="${r1(lW.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    b += `<circle cx="${r1(xW + tw / 2)}" cy="${r1(bW.y + bW.h + ch / 2)}" r="${r1(dotR)}" fill="${C.run}"/>`;
-    b += `<rect x="${xW}" y="${y}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    b += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h)}" rx="4" fill="none" stroke="${C.did}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
-    b += txt(xW + tw / 2, y - 12, "widget chrome tile", "#e5e7eb", "middle", 11);
-    let s = a + b;
-    /* vertical dimension stack on the left: p, i, p, l */
-    s += vdim(xA - 52, y, pv, "p", C.pad);
-    s += vdim(xA - 52, iA.y, ic, "i", C.good);
-    s += vdim(xA - 52, iA.y + ic, pv, "p", C.pad);
-    s += vdim(xA - 52, lA.y, lb, "l", C.warn);
-    /* widget: the fixed inset, both axes */
-    s += vdim(xW - 46, y, ch + pv, "◆", C.did);
-    s += dim(xW, y + th + 44, tw, "w");
-    s += dim(bW.x, y + th + 78, bW.w, "content box");
-    s += chip(xW, y + th + 112, ["content box = ", "frame inset by ◆ chrome (+ p vertically)"], "#94a3b8", "start", 10);
-    /* callouts: every constant, ◆ marks the fixed ones */
-    const cx = xW + tw + 128;
-    const rows = [
-      ["tile frame w × h", C.struct, y + 6, xA + tw, y + 2],
-      ["padding p (top)", C.pad, y + pv * 0.5, xA + tw, y + pv * 0.5],
-      ["icon slot i", C.good, iA.y + ic * 0.45, xA + tw, iA.y + ic * 0.45],
+    const label = (y, tx, ty, tw2, th2, cid) =>
+      `<defs><clipPath id="${cid}"><rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>` +
+      `<rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-opacity=".85"/>` +
+      `<text x="${r1(tx + tw2 / 2)}" y="${r1(ty + th2 * 0.85)}" text-anchor="middle" font-size="${r1(P(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#${cid})">${esc(G.sampleLabel ?? "Finder")}</text>`;
+    /* callout column for one row: sorted by y, then min-gap */
+    const callouts = (rows) => {
+      let body = "", prev = -Infinity;
+      [...rows].sort((a, b) => a[2] - b[2]).forEach(([t, color, want, ax, ay]) => {
+        const ty = Math.max(want, prev + 22);
+        prev = ty;
+        body += chip(cx, ty - 9, t, color, "start", 11, [ax, ay]);
+      });
+      return body;
+    };
+    let body = "";
+    /* ================= row 1: app tile ================= */
+    const yA = 84;
+    const bxA = x + ip, byA = yA + pv, bwA = tw - ip * 2, bhA = th - pv * 2;
+    const iA = { x: bxA + (bwA - ic) / 2, y: byA };
+    const lA = { x: iA.x, y: byA + bhA - lb, w: ic, h: lb };
+    const dotA = { x: x + tw / 2, y: iA.y + ic + pv / 2 };
+    body += txt(x + tw / 2, yA - 14, "app tile — inset only by iconPad", "#e5e7eb", "middle", 11);
+    body += band(x, yA, tw, pv) + band(x, iA.y + ic, tw, pv);
+    if (ip > 0) body += band(x, yA + pv, ip, bhA) + band(x + tw - ip, yA + pv, ip, bhA);
+    body += `<rect x="${r1(iA.x)}" y="${r1(iA.y)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    body += `<rect x="${r1(lA.x)}" y="${r1(lA.y)}" width="${r1(lA.w)}" height="${r1(lA.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    body += label(yA, lA.x + si, lA.y + gp, lA.w - si * 2, lA.h - gp, "clip-a");
+    body += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
+    body += `<circle cx="${r1(iA.x + ic - P(4))}" cy="${r1(iA.y + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
+    body += `<rect x="${x}" y="${yA}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
+    /* dimension stack + callouts for row 1 */
+    body += vdim(x - 52, yA, pv, "p", C.pad);
+    body += vdim(x - 52, iA.y, ic, "i", C.good);
+    body += vdim(x - 52, iA.y + ic, pv, "p", C.pad);
+    body += vdim(x - 52, lA.y, lb, "l", C.warn);
+    body += dim(x, yA + th + 46, tw, "w");
+    body += dim(iA.x, yA + th + 80, ic, "i");
+    body += callouts([
+      ["tile frame w × h", C.struct, yA + 6, x + tw, yA + 2],
+      ["padding p (top)", C.pad, yA + pv * 0.5, x + tw, yA + pv * 0.5],
+      ["icon slot i", C.good, iA.y + ic * 0.45, x + tw, iA.y + ic * 0.45],
       ["painted artwork", C.paint, iA.y + ic * 0.85, iA.x + ic - 6, iA.y + ic - 12],
-      ["padding p (bottom)", C.pad, iA.y + ic + pv * 0.5, xA + tw, iA.y + ic + pv * 0.5],
-      ["label row l", C.warn, lA.y + lb * 0.5, xA + tw, lA.y + lb * 0.5],
-      ["◆ gap g inside l", C.did, lA.y + gp * 0.6, xA + tw, lA.y + gp * 0.6],
-      ["◆ side inset / side", C.did, tyA + thA * 0.5, txA, tyA + thA * 0.5],
+      ["padding p (bottom)", C.pad, iA.y + ic + pv * 0.5, x + tw, iA.y + ic + pv * 0.5],
+      ["label row l", C.warn, lA.y + lb * 0.5, x + tw, lA.y + lb * 0.5],
+      ["◆ gap g inside l", C.did, lA.y + gp * 0.6, x + tw, lA.y + gp * 0.6],
+      ["◆ side inset / side", C.did, lA.y + gp + (lA.h - gp) * 0.5, lA.x + si, lA.y + gp + (lA.h - gp) * 0.5],
       ["◆ indicator thickness", C.did, dotA.y, dotA.x, dotA.y],
       ["notification badge", C.struct, iA.y + P(4), iA.x + ic - P(4), iA.y + P(4)],
-      ["◆ chrome inset (all sides)", C.did, bW.y + bW.h * 0.35, bW.x - 1, bW.y + bW.h * 0.35],
-      ["widget content box", C.good, bW.y + (bW.h - lb) * 0.5, xW + tw, bW.y + (bW.h - lb) * 0.5],
-      ["iconPad (configurable)", C.pad, y + pv + ic * 0.9, xW + ch + ip + 1, y + ch + pv + 10],
-    ];
-    let prev = -Infinity;
-    [...rows].sort((p1, p2) => p1[2] - p2[2]).forEach(([label, color, want, ax, ay]) => {
-      const ty2 = Math.max(want, prev + 22);
-      prev = ty2;
-      s += chip(cx, ty2 - 9, label, color, "start", 11, [ax, ay]);
-    });
-    s += chip(xA, y + th + 140, ["h = ", "2p + i + l"], "#94a3b8", "start", 11);
-    s += chip(xA + 260, y + th + 140, ["l = ", "g + text"], "#94a3b8", "start", 11);
-    s += chip(xA + 470, y + th + 140, ["i = ", "w − 2·iconPad"], "#94a3b8", "start", 11);
-    s += chip(xW + 10, y + th + 164, ["widget: content box = ", "w − 2·(◆ chrome + iconPad)"], "#94a3b8", "start", 10);
-    return svg(cx + 320, y + th + 190, s);
+      ["iconPad (configurable)", C.pad, yA + pv + ic * 0.9, x + ip + 1, yA + pv + ic * 0.9],
+    ]);
+    body += chip(x, yA + th + 122, ["h = ", "2p + i + l"], "#94a3b8", "start", 11);
+    body += chip(x + 260, yA + th + 122, ["l = ", "g + text"], "#94a3b8", "start", 11);
+    body += chip(x + 470, yA + th + 122, ["i = ", "w − 2·iconPad"], "#94a3b8", "start", 11);
+    /* ================= row 2: widget chrome tile ================= */
+    const yB = yA + th + 210;
+    const bW = { x: x + ch + ip, y: yB + ch + pv, w: tw - (ch + ip) * 2, h: th - (ch + pv) * 2 };
+    const lW = { x: bW.x, y: bW.y + bW.h - lb, w: bW.w, h: lb };
+    const dotW = { x: x + tw / 2, y: bW.y + bW.h + ch / 2 };
+    body += txt(x + tw / 2, yB - 14, "widget chrome tile — additionally inset by ◆ chrome", "#e5e7eb", "middle", 11);
+    body += band(x, yB, tw, ch + pv) + band(x, bW.y + bW.h, tw, ch);
+    if (ip > 0) body += band(x, yB + ch + pv, ch + ip, bW.h) + band(x + tw - ch - ip, yB + ch + pv, ch + ip, bW.h);
+    body += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h - lb)}" rx="${r1(ch)}" fill="${C.artFaint}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    body += `<rect x="${r1(lW.x)}" y="${r1(lW.y)}" width="${r1(lW.w)}" height="${r1(lW.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    body += `<circle cx="${r1(dotW.x)}" cy="${r1(dotW.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
+    body += `<rect x="${x}" y="${yB}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
+    body += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h)}" rx="4" fill="none" stroke="${C.did}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
+    body += vdim(x - 46, yB, ch + pv, "◆", C.did);
+    body += dim(x, yB + th + 46, tw, "w");
+    body += dim(bW.x, yB + th + 80, bW.w, "content box");
+    body += callouts([
+      ["tile frame w × h", C.struct, yB + 6, x + tw, yB + 2],
+      ["◆ chrome inset (all sides)", C.did, yB + (ch + pv) * 0.5, x + tw, yB + (ch + pv) * 0.5],
+      ["widget content box", C.good, bW.y + (bW.h - lb) * 0.45, x + tw, bW.y + (bW.h - lb) * 0.45],
+      ["label row l", C.warn, lW.y + lb * 0.5, x + tw, lW.y + lb * 0.5],
+      ["◆ indicator thickness", C.did, dotW.y, dotW.x, dotW.y],
+      ["iconPad (configurable)", C.pad, bW.y + bW.h * 0.85, bW.x - 1, bW.y + bW.h * 0.85],
+    ]);
+    body += chip(x, yB + th + 122, ["content box = ", "w − 2·(◆ chrome + iconPad)"], "#94a3b8", "start", 11);
+    body += chip(x + 470, yB + th + 122, ["h = ", "2·(chrome + p) + content"], "#94a3b8", "start", 10);
+    return svg(cx + 420, yB + th + 150, body);
   }
 
   /* ---------- figure 6: variants ---------- */
