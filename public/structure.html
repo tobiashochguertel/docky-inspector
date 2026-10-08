@@ -266,6 +266,11 @@ same structure at three zoom levels.</li>
     w: 40, baseH: 56, h: 68, icon: 40, labelText: 10, labelRow: 12, gap: 2, sideInset: 2,
     vPad: 8, iconPad: 0, spacing: 0, divider: 0, n: 4, labelCount: 51,
     paintFolder: [32.3, 35.3], paintMin: [28, 28.8], sampleLabel: "Finder", chromeInset: 3,
+    /* offline fallback: the values a stock 40x68 app tile measures */
+    measured: {
+      w: 40, h: 68, icon: [0, 8, 40, 40], label: [0, 50, 40, 10], paint: [0, 8, 40, 40],
+      bands: { padTop: 8, padGap: 2, padBottom: 8, insetL: 0, insetR: 0, labelGap: 2, paintTop: 0, paintL: 0 },
+    },
     fontSize: 8, placement: "below",
     m: { iconLabelGap: 2, sideInset: 2, labelHeight: 10, labelRowHeight: 12, maxSidewaysLabelWidth: 96,
          folderChromeFraction: 0.06, mosaicScale: 0.36, cardHeightScale: 0.8, badgeScale: 0.8,
@@ -568,55 +573,63 @@ same structure at three zoom levels.</li>
       return body;
     };
     let body = "";
-    /* ================= row 1: app tile ================= */
+    /* ================= row 1: app tile — drawn from the measured frames ==
+       M holds the frames Docky measured for a real app tile this run:
+       icon/label/paint rects in tile-local points, and the bands between
+       them. Nothing here is re-derived, so the figure cannot disagree
+       with the dock. Bands come straight from the snapshot, which is why
+       the bottom padding shows up even though it is not obvious. */
     const yA = 84;
-    /* frame = p (top) + i + p (between icon and label) + l — so only the
-       TOP padding is removed to get the content box; there is no padding
-       below the label row. */
-    const bxA = x + ip, byA = yA + pv, bwA = tw - ip * 2, bhA = th - pv;
-    const iA = { x: bxA + (bwA - ic) / 2, y: byA };
-    const lA = { x: iA.x, y: byA + bhA - lb, w: ic, h: lb };
-    const dotA = { x: x + tw / 2, y: iA.y + ic + pv / 2 };
-    body += txt(x + tw / 2, yA - 14, "app tile — inset only by iconPad", "#e5e7eb", "middle", 11);
-    body += band(x, yA, tw, pv) + band(x, iA.y + ic, tw, pv);   // top, and between icon + label
-    if (ip > 0) body += band(x, yA + pv, ip, bhA) + band(x + tw - ip, yA + pv, ip, bhA);
-    body += `<rect x="${r1(iA.x)}" y="${r1(iA.y)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    body += `<rect x="${r1(lA.x)}" y="${r1(lA.y)}" width="${r1(lA.w)}" height="${r1(lA.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    body += label(yA, lA.x + si, lA.y + gp, lA.w - si * 2, lA.h - gp, "clip-a");
-    body += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
-    /* the pill alternative: same thickness, ◆ indicator length long */
-    const pill = { x: x + tw - P(G.m.indicatorLength * sc) - 6, y: dotA.y - dotR, w: P(G.m.indicatorLength * sc), h: dotR * 2 };
-    body += `<rect x="${r1(pill.x)}" y="${r1(pill.y)}" width="${r1(pill.w)}" height="${r1(pill.h)}" rx="${r1(dotR)}" fill="${C.run}"/>`;
-    /* ◆ offset: the indicator sits baseInward below the icon's bottom edge */
-    const offPx = pv / 2 - dotR;
-    if (offPx > 1) body += `<rect x="${r1(pill.x)}" y="${r1(iA.y + ic)}" width="${r1(pill.w)}" height="${r1(offPx)}" fill="${C.didFill}" stroke="${C.did}" stroke-opacity=".7" stroke-dasharray="2 2"/>`;
-    body += `<circle cx="${r1(iA.x + ic - P(4))}" cy="${r1(iA.y + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
+    const M = G.measured;
+    const P2 = (pt) => u(pt) * S;
+    const bx = (v) => x + P2(v), by = (v) => yA + P2(v);
+    const mf = M.icon, mL = M.label, mp = M.paint, bd = M.bands;
+    body += txt(x + tw / 2, yA - 16, "app tile — every band below is measured, not derived", "#e5e7eb", "middle", 11);
+    /* the empty regions, exactly as the layout produced them */
+    body += band(x, yA, tw, P2(bd.padTop));
+    body += band(x, by(mf[1] + mf[3]), tw, P2(bd.padGap));
+    body += band(x, by(mL[1] + mL[3]), tw, P2(bd.padBottom));
+    if (bd.insetL > 0) body += band(x, yA + P2(bd.padTop), P2(bd.insetL), P2(th - bd.padTop - bd.padBottom));
+    /* icon slot and its painted artwork */
+    body += `<rect x="${r1(bx(mf[0]))}" y="${r1(by(mf[1]))}" width="${r1(P2(mf[2]))}" height="${r1(P2(mf[3]))}" rx="${r1(P2(mf[2]) * 0.09)}" fill="${C.slotFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    body += `<rect x="${r1(bx(mp[0]))}" y="${r1(by(mp[1]))}" width="${r1(P2(mp[2]))}" height="${r1(P2(mp[3]))}" rx="${r1(P2(mp[2]) * 0.06)}" fill="${C.artFill}" stroke="${C.artStroke}" stroke-opacity=".8"/>`;
+    /* the label row's text box, clipped by the fixed side inset */
+    body += `<rect x="${r1(bx(mL[0]))}" y="${r1(by(mL[1]))}" width="${r1(P2(mL[2]))}" height="${r1(P2(mL[3]))}" rx="2" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+    const tx2 = bx(mL[0] + si), tw2 = P2(mL[2] - si * 2), ty2 = by(mL[1]), th2 = P2(mL[3]);
+    body += `<defs><clipPath id="clip-a"><rect x="${r1(tx2)}" y="${r1(ty2)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>`;
+    body += `<rect x="${r1(tx2)}" y="${r1(ty2)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-width="1.2"/>`;
+    body += `<text x="${r1(bx(mL[0] + mL[2] / 2))}" y="${r1(ty2 + th2 * 0.82)}" text-anchor="middle" font-size="${r1(P2(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#clip-a)">${esc(G.sampleLabel ?? "Finder")}</text>`;
+    /* overlays, in the measured gap between icon and label row */
+    const dotA = { x: bx(mf[0] + mf[2] / 2), y: by(mf[1] + mf[3] + bd.labelGap / 2) };
+    body += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(P2(G.m.indicatorThickness * sc / 2))}" fill="${C.run}"/>`;
+    const pillW = P2(G.m.indicatorLength * sc), pillH = P2(G.m.indicatorThickness * sc);
+    body += `<rect x="${r1(bx(mf[0] + mf[2]) - pillW - 4)}" y="${r1(dotA.y - pillH / 2)}" width="${r1(pillW)}" height="${r1(pillH)}" rx="${r1(pillH / 2)}" fill="${C.run}"/>`;
+    body += `<circle cx="${r1(bx(mp[0] + mp[2] - P(4)))}" cy="${r1(by(mp[1] + P(4)))}" r="${r1(P2(4))}" fill="${C.badge}"/>`;
     body += `<rect x="${x}" y="${yA}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    /* dimension stack + callouts for row 1 */
-    body += vdim(x - 52, yA, pv, "p", C.pad);
-    body += vdim(x - 52, iA.y, ic, "i", C.good);
-    body += vdim(x - 52, iA.y + ic, pv, "p", C.pad);
-    body += vdim(x - 52, lA.y, lb, "l", C.warn);
+    /* the measured stack, one bracket per band */
+    const segs = [[bd.padTop, "p"], [mf[3], "i"], [bd.padGap, "◆ g"], [mL[3], "text"], [bd.padBottom, "p"]];
+    let sy = 0;
+    segs.forEach(([h, lab], i) => {
+      if (h > 0) body += vdim(x - 52, by(sy), P2(h), lab, i === 2 ? C.did : i === 1 ? C.good : i === 3 ? C.warn : C.pad);
+      sy += h;
+    });
     body += dim(x, yA + th + 46, tw, "w");
-    body += dim(iA.x, yA + th + 80, ic, "i");
+    body += dim(bx(mf[0]), yA + th + 80, P2(mf[2]), "i");
     body += callouts([
       ["tile frame w × h", C.struct, yA + 6, x + tw, yA + 2],
-      ["padding p (top)", C.pad, yA + pv * 0.5, x + tw, yA + pv * 0.5],
-      ["icon slot i", C.good, iA.y + ic * 0.45, x + tw, iA.y + ic * 0.45],
-      ["painted artwork", C.paint, iA.y + ic * 0.85, iA.x + ic - 6, iA.y + ic - 12],
-      ["padding p (bottom)", C.pad, iA.y + ic + pv * 0.5, x + tw, iA.y + ic + pv * 0.5],
-      ["label row l", C.warn, lA.y + lb * 0.5, x + tw, lA.y + lb * 0.5],
-      ["◆ gap g inside l", C.did, lA.y + gp * 0.6, x + tw, lA.y + gp * 0.6],
-      ["◆ side inset / side", C.did, lA.y + gp + (lA.h - gp) * 0.5, lA.x + si, lA.y + gp + (lA.h - gp) * 0.5],
+      [`padding p = ${bd.padTop}`, C.pad, by(bd.padTop / 2), x + tw, by(bd.padTop / 2)],
+      [`icon slot i = ${mf[2]}×${mf[3]}`, C.good, by(mf[1] + mf[3] / 2), x + tw, by(mf[1] + mf[3] / 2)],
+      [`painted = ${mp[2]}×${mp[3]}`, C.paint, by(mf[1] + mf[3] * 0.85), bx(mp[0] + mp[2] - 6), by(mp[1] + mp[3] - 10)],
+      [`◆ gap g = ${bd.labelGap}`, C.did, by(mf[1] + mf[3] + bd.labelGap / 2), x + tw, by(mf[1] + mf[3] + bd.labelGap / 2)],
+      [`label text = ${mL[2]}×${mL[3]}`, C.warn, by(mL[1] + mL[3] / 2), x + tw, by(mL[1] + mL[3] / 2)],
+      [`padding p = ${bd.padBottom}`, C.pad, by(mL[1] + mL[3] + bd.padBottom / 2), x + tw, by(mL[1] + mL[3] + bd.padBottom / 2)],
+      ["◆ side inset / side", C.did, ty2 + th2 / 2, tx2, ty2 + th2 / 2],
       ["◆ indicator thickness", C.did, dotA.y, dotA.x, dotA.y],
-      ["◆ indicator length (pill)", C.did, dotA.y, pill.x + pill.w / 2, dotA.y],
-      ["◆ indicator offset", C.did, iA.y + ic + offPx / 2, pill.x, iA.y + ic + offPx / 2],
-      ["label font size", C.warn, lA.y + lb * 0.5, lA.x + lA.w / 2, lA.y + lA.h * 0.5],
-      ["notification badge", C.struct, iA.y + P(4), iA.x + ic - P(4), iA.y + P(4)],
-      ["iconPad (configurable)", C.pad, yA + pv + ic * 0.9, x + ip + 1, yA + pv + ic * 0.9],
+      ["notification badge", C.struct, by(mp[1] + P2(4)), bx(mp[0] + mp[2] - P2(4)), by(mp[1] + P2(4))],
     ]);
-    body += chip(x, yA + th + 122, ["h = ", "2p + i + l"], "#94a3b8", "start", 11);
-    body += chip(x + 260, yA + th + 122, ["l = ", "g + text"], "#94a3b8", "start", 11);
+    body += chip(x, yA + th + 124, ["h = ", `${bd.padTop} + ${mf[3]} + ${bd.labelGap} + ${mL[3]} + ${bd.padBottom} = ${G.h}`], "#94a3b8", "start", 11);
+    body += chip(x + 430, yA + th + 124, ["measured", ""], "#64748b", "start", 11);
+
     body += chip(x + 470, yA + th + 122, ["i = ", "w − 2·iconPad"], "#94a3b8", "start", 11);
     /* ================= row 2: widget chrome tile ================= */
     const yB = yA + th + 210;
@@ -992,6 +1005,14 @@ same structure at three zoom levels.</li>
     if (fold) G.paintFolder = [r1(fold.paintM[0]), r1(fold.paintM[1])];
     if (min) G.paintMin = [r1(min.paintM[0]), r1(min.paintM[1])];
     G.sampleLabel = app.label && app.label !== "-" ? app.label : "Finder";
+    /* the frames Docky measured for a real app tile, in tile-local points */
+    if (app.iconF && app.labelF) {
+      G.measured = {
+        w: app.w, h: app.h,
+        icon: app.iconF, label: app.labelF, paint: app.paintF ?? app.iconF,
+        bands: app.bands ?? {},
+      };
+    }
     G.kindCounts = {};
     for (const t of d.tiles) G.kindCounts[t.kind] = (G.kindCounts[t.kind] ?? 0) + 1;
     render();
