@@ -1,14 +1,14 @@
 {
   "name": "docky-inspector",
   "version": "0.1.0",
-  "devDependencies": {
-    "bun-types": "^1.4.2"
-  },
   "description": "Live layout inspector for Docky's dock bar (Bun + TypeScript)",
+  "type": "module",
   "scripts": {
     "build": "bun build ./public/app.ts --outdir ./public/dist --target browser",
     "dev": "bun run build && bun ./src/server.ts",
     "start": "bun ./src/server.ts"
   },
-  "type": "module"
+  "devDependencies": {
+    "bun-types": "^1.4.2"
+  }
 }
