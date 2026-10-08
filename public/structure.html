@@ -16,6 +16,15 @@ h2 { color: #fff; font-size: 16px; margin: 0 0 4px; }
 svg.fig { display: block; max-width: 100%; height: auto; }
 text { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .cap { font-size: 11px; color: #6b7280; margin: 6px 0 12px; }
+.legend { border: 1px solid #374151; border-radius: 8px; background: #0b1220; padding: 12px 14px; margin: 10px 0 4px; }
+.legend h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #6b7280; font-weight: 600; }
+.legend .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 4px 18px; }
+.legend .item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #cbd5e1; }
+.legend .item svg { flex: none; }
+.legend .item b { color: #e5e7eb; font-weight: 500; }
+.legend .item.did b { color: #c4b5fd; }
+.legend .group { margin-top: 10px; padding-top: 8px; border-top: 1px solid #1e293b; }
+.legend .note { margin: 8px 0 0; font-size: 11px; color: #64748b; }
 ul { margin: 8px 0 0; padding-left: 20px; }
 li { margin: 2px 0; }
 code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
@@ -33,6 +42,30 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 <p class="crumb">the bar <b>▸</b> a section <b>▸</b> a tile <b>▸</b> the icon slot <b>▸</b> the painted artwork</p>
 <div id="f-zoom"></div>
 <p class="cap">Each panel shows the highlighted region of the panel before it, drawn larger. Sections 1–4 explain one level each.</p>
+
+<div class="legend">
+  <h3>Legend</h3>
+  <div class="cols">
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="1.5" y="1.5" width="19" height="19" rx="3" fill="none" stroke="#cbd5e1" stroke-opacity=".65" stroke-dasharray="4 3"/></svg><span><b>tile frame</b> — reserved box</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="2" fill="#f472b61f" stroke="#f472b6" stroke-opacity=".5" stroke-dasharray="3 3"/></svg><span><b>padding</b> — empty space</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="#22c55e1f" stroke="#22c55e" stroke-opacity=".85" stroke-dasharray="4 3"/></svg><span><b>icon slot</b> — layout box</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="#22c55e1f" stroke="#22c55e" stroke-opacity=".85" stroke-dasharray="4 3"/><rect x="6.5" y="6.5" width="9" height="9" rx="1.5" fill="#fdba7466" stroke="#fdba74"/></svg><span><b>painted artwork</b> — what is drawn</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="6.5" width="15" height="9" rx="2" fill="#facc1544" stroke="#facc15" stroke-opacity=".85" stroke-dasharray="4 3"/></svg><span><b>label row</b> — reserved for text</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="1.5" y="4.5" width="19" height="13" rx="3" fill="none" stroke="#93c5fd" stroke-opacity=".7" stroke-dasharray="5 3"/></svg><span><b>bar</b> / <b>section</b> — containers</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="2" x2="11" y2="20" stroke="#6b7280"/></svg><span><b>divider</b> — between sections</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="none" stroke="#4b5563"/></svg><span><b>hatched</b> — reserved, nothing drawn</span></div>
+  </div>
+  <div class="group">
+    <h3>Didactic marks — not part of the structure</h3>
+    <div class="cols">
+      <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="#c4b5fd2e" stroke="#c4b5fd" stroke-width="2"/></svg><span><b>zoom region</b> — magnified in the next panel</span></div>
+      <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="2" y1="11" x2="20" y2="5" stroke="#c4b5fd" stroke-opacity=".6" stroke-dasharray="2 3"/><circle cx="20" cy="5" r="2" fill="#c4b5fd"/></svg><span><b>leader line</b> — chip points at a part</span></div>
+      <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="3" y1="12" x2="19" y2="12" stroke="#c4b5fd"/><line x1="3" y1="8" x2="3" y2="16" stroke="#c4b5fd"/><line x1="19" y1="8" x2="19" y2="16" stroke="#c4b5fd"/></svg><span><b>dimension</b> — measured extent</span></div>
+      <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="2" y1="11" x2="16" y2="11" stroke="#c4b5fd"/><path d="M16 7 L22 11 L16 15 Z" fill="#c4b5fd"/></svg><span><b>zoom step</b> — continues outward-in</span></div>
+    </div>
+    <p class="note">Chips inherit the colour of what they name. <b style="color:#c4b5fd">Violet</b> is reserved for annotation — it never appears in the dock itself, so anything violet is ours, not Docky's.</p>
+  </div>
+</div>
 </div>
 
 <div class="sec">
@@ -129,6 +162,8 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     label: "#facc15", labelFill: "#facc1544",
     struct: "#cbd5e1", info: "#93c5fd", good: "#4ade80", warn: "#fde047", paint: "#fdba74",
     run: "#e5e7eb", badge: "#4ade80",
+    /* didactic marks — annotation only, never part of the structure */
+    did: "#c4b5fd", didFill: "#c4b5fd2e",
   };
   const u = (pt) => Math.round(pt * U * 10) / 10;
   const r1 = (n) => Math.round(n * 10) / 10;
@@ -141,16 +176,19 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     return `<g><rect x="${r1(rx)}" y="${r1(y)}" width="${r1(w)}" height="17" rx="4" fill="#0b1220" fill-opacity=".93" stroke="${color}" stroke-opacity=".5"/>` +
       txt(rx + 6, y + 12, s, color) + `</g>`;
   };
-  const ln = (x1, y1, x2, y2, color = C.struct) =>
-    `<line x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}" stroke="${color}" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
-  const dim = (x, y, w, s, color = C.struct) =>
-    `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + w)}" y2="${r1(y)}" stroke="${color}" stroke-opacity=".55"/>` +
-    `<line x1="${r1(x)}" y1="${r1(y - 4)}" x2="${r1(x)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".55"/>` +
-    `<line x1="${r1(x + w)}" y1="${r1(y - 4)}" x2="${r1(x + w)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".55"/>` +
+  const ln = (x1, y1, x2, y2, color = C.did) =>
+    `<line x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}" stroke="${color}" stroke-opacity=".6" stroke-dasharray="2 3"/>`;
+  const dim = (x, y, w, s, color = C.did) =>
+    `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + w)}" y2="${r1(y)}" stroke="${color}" stroke-opacity=".8"/>` +
+    `<line x1="${r1(x)}" y1="${r1(y - 4)}" x2="${r1(x)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".8"/>` +
+    `<line x1="${r1(x + w)}" y1="${r1(y - 4)}" x2="${r1(x + w)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".8"/>` +
     chip(x + w / 2, y - 21, s, color, "middle");
   const svg = (w, h, body) => `<svg class="fig" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${body}</svg>`;
-  const focus = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="none" stroke="${C.info}" stroke-width="2"/>`;
-  const arrow = (x, y) => `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + 16)}" y2="${r1(y)}" stroke="${C.info}" stroke-opacity=".6"/><path d="M${r1(x + 16)} ${r1(y - 4)} L${r1(x + 22)} ${r1(y)} L${r1(x + 16)} ${r1(y + 4)} Z" fill="${C.info}" fill-opacity=".7"/>`;
+  /* zoom region: didactic. Backdrop goes behind the content, the outline on
+   top, so highlighting never washes out what it marks. */
+  const focusBg = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="${C.didFill}"/>`;
+  const focus = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="none" stroke="${C.did}" stroke-width="2.5"/>`;
+  const arrow = (x, y) => `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + 16)}" y2="${r1(y)}" stroke="${C.did}" stroke-opacity=".8"/><path d="M${r1(x + 16)} ${r1(y - 4)} L${r1(x + 22)} ${r1(y)} L${r1(x + 16)} ${r1(y + 4)} Z" fill="${C.did}"/>`;
 
   // ---- artwork inside the icon slot -------------------------------------
   function art(x, y, s, kind, paint) {
@@ -209,7 +247,8 @@ are measured from your running dock. Every box is drawn to true scale at <span i
       (o.focusOn ? `<g transform="translate(${r1(x)},${r1(y)}) scale(${sc})">${o.focusOn}</g>` : "");
   };
   // focus rings for the tile's own sub-boxes, in tile-local px
-  const slotRing = () => focus((u(T.w) - u(T.icon)) / 2, u(T.pad), u(T.icon), u(T.icon));
+  const slotBox = () => [(u(T.w) - u(T.icon)) / 2, u(T.pad), u(T.icon), u(T.icon)];
+  const slotRing = () => focus(...slotBox());
   const paintRing = (pw, ph) => focus((u(T.w) - u(T.icon)) / 2 + (u(T.icon) - u(pw)) / 2, u(T.pad) + (u(T.icon) - u(ph)) / 2, u(pw), u(ph));
 
   // ---- figure 0: zoom sequence, outer -> inner ---------------------------
@@ -219,6 +258,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     // panel 1 — the bar, focus = one whole section (2 tiles side by side)
     const s3 = 0.22, tw3 = u(T.w) * s3, th3 = u(T.h) * s3, ty1 = base - 120 + (120 - th3) / 2;
     let a = `<rect x="0" y="${base - 120}" width="${PW}" height="120" rx="8" fill="${C.barFill}" stroke="${C.bar}"/>`;
+    a += focusBg(64, ty1 - 2, tw3 * 2 + 2 + 4, th3 + 4);
     a += tile(10, ty1, { sc: s3 }) + tile(34, ty1, { sc: s3 });
     a += `<line x1="60" y1="${r1(ty1)}" x2="60" y2="${r1(ty1 + th3)}" stroke="#6b7280"/>`;
     a += tile(66, ty1, { sc: s3 }) + tile(90, ty1, { sc: s3 });
@@ -229,18 +269,22 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     // panel 2 — a section, focus = one whole tile
     const s2 = 0.45, tw2 = u(T.w) * s2, th2 = u(T.h) * s2, ty2 = base - 118;
     let b = `<rect x="0" y="${base - 130}" width="${PW}" height="130" rx="8" fill="${C.barFill}" stroke="${C.info}" stroke-opacity=".7" stroke-dasharray="5 3"/>`;
+    b += focusBg(68, ty2 - 2, tw2 + 4, th2 + 4);
     b += tile(14, ty2, { sc: s2 }) + tile(70, ty2, { sc: s2 }) + tile(126, ty2, { sc: s2 });
     b += focus(68, ty2 - 2, tw2 + 4, th2 + 4);
     p.push(b + txt(PW / 2, base + 18, "a section", C.info, "middle"));
     // panel 3 — a tile, focus = the icon slot
-    let c = tile(43, base - u(T.h), {});
+    let c = `<g transform="translate(43,${base - u(T.h)})">${focusBg(...slotBox())}</g>`;
+    c += tile(43, base - u(T.h), {});
     c += `<g transform="translate(43,${base - u(T.h)})">${slotRing()}</g>`;
     p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle"));
     // panel 4 — the icon slot, focus = the painted artwork
     const sl = 120, sx = 33, sy = base - sl;
-    let d = `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
+    const pbx = sx + (sl - u(T.paintFolder[0])) / 2, pby = sy + (sl - u(T.paintFolder[1])) / 2;
+    let d = focusBg(pbx, pby, u(T.paintFolder[0]), u(T.paintFolder[1]));
+    d += `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
     d += art(sx, sy, sl, "folder", T.paintFolder);
-    d += focus(sx + (sl - u(T.paintFolder[0])) / 2, sy + (sl - u(T.paintFolder[1])) / 2, u(T.paintFolder[0]), u(T.paintFolder[1]));
+    d += focus(pbx, pby, u(T.paintFolder[0]), u(T.paintFolder[1]));
     d += chip(PW, base - sl - 6, "the icon slot", C.good, "end");
     d += chip(PW, base - sl + 14, "painted artwork", C.paint, "end");
     p.push(d + txt(PW / 2, base + 18, "the icon slot", C.struct, "middle"));
@@ -311,11 +355,11 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     s += dim(x0, y0 - 26, tw, `tile ${T.w}×${T.h}pt`, C.struct);
     s += dim(x0 + 2 * (tw + sp), y0 - 26, tw, "identical", C.struct);
     s += `<line x1="${r1(x0 + tw)}" y1="${y0}" x2="${r1(x0 + tw)}" y2="${r1(y0 + th)}" stroke="${C.info}" stroke-opacity=".7" stroke-dasharray="2 3"/>`;
-    s += chip(x0 + tw, y0 - 72, `spacing ${T.spacing}pt`, C.info, "middle");
-    s += chip(x0 + rowW, y0 - 72, "one section", C.info, "end");
-    s += ln(x0 + rowW - 4, y0 - 62, x0 + rowW - 20, y0 - 18, C.info);
-    s += ln(x0 + 6, y0 + th + 12, x0 + rowW, y0 + th + 12, C.info);
-    s += chip(x0 + rowW, y0 + th + 18, "all frames identical → rows stay aligned", C.struct, "end");
+    s += chip(x0 + tw, y0 - 72, `spacing ${T.spacing}pt`, C.did, "middle");
+    s += chip(x0 + rowW, y0 - 72, "one section", C.did, "end");
+    s += ln(x0 + rowW - 4, y0 - 62, x0 + rowW - 20, y0 - 18, C.did);
+    s += ln(x0 + 6, y0 + th + 12, x0 + rowW, y0 + th + 12, C.did);
+    s += chip(x0 + rowW, y0 + th + 18, "all frames identical → rows stay aligned", C.did, "end");
     return svg(760, y0 + th + 50, s);
   }
 
@@ -331,7 +375,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
       [`icon slot ${T.icon}×${T.icon}pt`, C.good, y + pd + ic * 0.8, x + tw, y + pd + ic * 0.5],
       ["painted artwork", C.paint, y + pd + ic + lb + 16, x + tw - 3, y + pd + ic - 8],
       [`label row ${T.icon}×${T.label}pt`, C.warn, y + th - lb / 2, x + tw, y + th - lb / 2],
-      ["overlays — no layout space", C.info, y + th + 30, x + tw / 2, y + pd + ic + 5],
+      ["overlays — no layout space", C.did, y + th + 30, x + tw / 2, y + pd + ic + 5],
     ];
     let prev = -Infinity;
     rows.forEach(([label, color, want, ax, ay]) => {
