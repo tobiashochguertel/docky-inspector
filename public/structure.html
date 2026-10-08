@@ -262,17 +262,25 @@ same structure at three zoom levels.</li>
   const txt = (x, y, s, fill = "#cbd5e1", anchor = "start", size = 11) =>
     `<text x="${r1(x)}" y="${r1(y)}" fill="${fill}" text-anchor="${anchor}" font-size="${size}">${esc(s)}</text>`;
   /* "<var>name</var> = rest" with the variable part bold */
-  const lead = (x, y, name, rest, fill, anchor = "start", size = 11) =>
-    `<text x="${r1(x)}" y="${r1(y)}" fill="${fill}" text-anchor="${anchor}" font-size="${size}">` +
-    `<tspan font-weight="700">${esc(name)}</tspan>${esc(rest)}</text>`;
   /* Chips are emitted unmeasured: the box has no width yet and the text
      starts at x=0. `fitChips` measures the real glyph run after the SVG is
      in the DOM and sizes the box to it — estimating an advance width from
      the character count was ~3% short and let text escape its own box. */
-  const chip = (x, y, s, color = C.struct, anchor = "start", size = 11) =>
-    `<g class="chip" data-x="${r1(x)}" data-y="${r1(y)}" data-anchor="${anchor}">` +
-    `<rect x="0" y="${r1(y)}" height="17" rx="4" fill="#0b1220" fill-opacity=".93" stroke="${color}" stroke-opacity=".5"/>` +
-    `<text x="0" y="${r1(y + 12)}" fill="${color}" font-size="${size}">${esc(s)}</text></g>`;
+  const chip = (x, y, s, color = C.struct, anchor = "start", size = 11, leader = null) => {
+    /* s is a string, or [boldHead, rest] to bold the leading term.
+       leader = [targetX, targetY] draws a line from the box edge once the
+       box is measured (unrotated chips only — see fitChips). */
+    const inner = Array.isArray(s)
+      ? `<tspan font-weight="700">${esc(s[0])}</tspan>${esc(s[1])}`
+      : esc(s);
+    const lead = leader ? `<line class="lead" data-tx="${r1(leader[0])}" data-ty="${r1(leader[1])}"/>` : "";
+    return `<g class="chip" data-x="${r1(x)}" data-y="${r1(y)}" data-anchor="${anchor}">` +
+      `<rect x="0" y="${r1(y)}" height="17" rx="4" fill="#0b1220" fill-opacity=".93" stroke="${color}" stroke-opacity=".5"/>` +
+      `<text x="0" y="${r1(y + 12)}" fill="${color}" font-size="${size}">${inner}</text>${lead}</g>`;
+  };
+  /* rotated chip: the box lands centred on (x, y), extending right by its height */
+  const vchip = (x, y, s, color = C.did, anchor = "middle", size = 10) =>
+    `<g transform="translate(${r1(x)},${r1(y)}) rotate(-90)">${chip(0, 0, s, color, anchor, size)}</g>`;
   function fitChips() {
     document.querySelectorAll("svg.fig g.chip").forEach((g) => {
       const t = g.querySelector("text"), r = g.querySelector("rect");
@@ -286,6 +294,19 @@ same structure at three zoom levels.</li>
       r.setAttribute("x", r1(rx));
       r.setAttribute("width", r1(box));
       t.setAttribute("x", r1(rx + 6));
+      /* leader starts on the box edge nearest its target */
+      const l = g.querySelector("line.lead");
+      if (l) {
+        const tx = Number(l.dataset.tx), ty = Number(l.dataset.ty), top = Number(g.dataset.y);
+        const nearLeft = Math.abs(tx - rx) <= Math.abs(tx - (rx + box));
+        l.setAttribute("x1", r1(nearLeft ? rx : rx + box));
+        l.setAttribute("y1", r1(top));
+        l.setAttribute("x2", r1(tx));
+        l.setAttribute("y2", r1(ty));
+        l.setAttribute("stroke", t.getAttribute("fill"));
+        l.setAttribute("stroke-opacity", ".65");
+        l.setAttribute("stroke-dasharray", "2 3");
+      }
     });
   }
   const ln = (x1, y1, x2, y2, color = C.did) =>
@@ -301,8 +322,6 @@ same structure at three zoom levels.</li>
     `<line x1="${r1(x - 5)}" y1="${r1(y)}" x2="${r1(x + 5)}" y2="${r1(y)}" stroke="${color}" stroke-opacity=".85"/>` +
     `<line x1="${r1(x - 5)}" y1="${r1(y + h)}" x2="${r1(x + 5)}" y2="${r1(y + h)}" stroke="${color}" stroke-opacity=".85"/>` +
     `<g transform="translate(${r1(x - 24)},${r1(y + h / 2)}) rotate(-90)">${chip(0, 0, s, color, "middle", 10)}</g>`;
-  const vtxt = (x, y, name, rest, fill, size = 10) =>
-    `<g transform="translate(${r1(x)},${r1(y)}) rotate(-90)">${lead(0, 0, name, rest, fill, "start", size)}</g>`;
   const svg = (w, h, body) => `<svg class="fig" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${body}</svg>`;
   const focusBg = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="${C.didFill}"/>`;
   const focus = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="none" stroke="${C.did}" stroke-width="2.5"/>`;
@@ -390,7 +409,9 @@ same structure at three zoom levels.</li>
     let c = `<g transform="translate(43,${base - u(G.h)})">${focusBg(...slotBox())}</g>`;
     c += tile(43, base - u(G.h), {});
     c += `<g transform="translate(43,${base - u(G.h)})">${slotRing()}</g>`;
-    p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle") + chip(PW / 2, base + 30, "running indicator", C.did, "middle"));
+    const dotY = base - u(G.h) + u(G.vPad) + u(G.icon) + u(G.gap) + 2.5;
+    p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle") +
+      chip(PW / 2, base + 32, "running indicator", C.did, "middle", 11, [43 + u(G.w) / 2, dotY]));
     const sl = 120, sx = 33, sy = base - sl;
     let d = `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
     d += `<rect x="${sx + 1}" y="${sy + 1}" width="${sl - 2}" height="${sl - 2}" rx="9" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="1.2"/>`;
@@ -435,8 +456,8 @@ same structure at three zoom levels.</li>
     s += ln(barX + barW - padPx - 40, barY - 9, barX + barW - padPx - 40, barY + padPx - 4, C.did);
     /* dimensions, symbolic */
     s += dim(barX, barY + barH + 52, barW, "width = n·w + (n−1)·s + k·d + 2p");
-    s += vdim(barX - 40, barY, barH, "height = h + 2p");
-    s += vtxt(barX - 78, barY + barH / 2, "h = ", "p + i + g + l", "#94a3b8", 10);
+    s += vdim(barX - 40, barY, barH, ["height = ", "h + 2p"]);
+    s += vchip(barX - 98, barY + barH / 2, ["h = ", "p + i + g + l"], "#94a3b8");
     return svg(barX + barW + 150, barY + barH + 76, s);
   }
 
@@ -514,7 +535,7 @@ same structure at three zoom levels.</li>
     });
     s += vdim(x - 34, y, pd, "p", C.pad);
     s += vdim(x + tw + 36, y + pd + ic + gp, lb, "l", C.warn);
-    s += lead(x, y + th + 84, "h = ", "p + i + g + l", "#94a3b8", "start", 10);
+    s += chip(x, y + th + 84, ["h = ", "p + i + g + l"], "#94a3b8", "start", 10);
     return svg(760, y + th + 100, s);
   }
 
