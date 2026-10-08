@@ -6,6 +6,8 @@
 
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { d2Available, renderD2, toD2 } from "./d2";
+import { FIGURES, type Snapshot } from "./figures";
 import { diffTiles, judge, type LayoutSnapshot, type LayoutTile } from "./layout";
 
 const SNAPSHOT = join(homedir(), "Library/Logs/Docky/docky-layout.json");
@@ -224,6 +226,64 @@ function fmtTime(ms: number): string {
   return new Date(ms).toTimeString().slice(0, 8);
 }
 
+/**
+ * Serves the structure page with its figures already rendered.
+ *
+ * Figures are D2 diagrams compiled from the live layout snapshot, so the page
+ * ships finished instead of rebuilding geometry in the browser. Each figure
+ * carries its D2 source in a collapsed `<details>`, because the source *is*
+ * the specification of the structure being documented.
+ */
+async function structurePage(): Promise<string> {
+  const file = join(import.meta.dir, "..", "public", "structure.html");
+  let html = await Bun.file(file).text();
+  const snapshot = await readSnapshot();
+
+  if (!d2Available()) {
+    return html.replace(
+      /<div class="d2-note" id="d2-missing"><\/div>/g,
+      `<div class="d2-note warn">D2 CLI not found on PATH — figures cannot be rendered.
+       Install it with <code>brew install d2</code>.</div>`,
+    );
+  }
+  if (!snapshot) {
+    return html.replace(
+      /<div class="d2-note" id="d2-missing"><\/div>/g,
+      `<div class="d2-note warn">No layout snapshot at ${SNAPSHOT} — figures use fallback numbers.</div>`,
+    );
+  }
+
+  for (const [placeholder, build] of Object.entries(FIGURES)) {
+    const marker = `<div class="fig" id="${placeholder}"></div>`;
+    if (!html.includes(marker)) continue;
+    try {
+      const figure = build(snapshot.data as unknown as Snapshot);
+      const source = toD2(figure);
+      const svg = await renderD2(source, { salt: placeholder });
+      html = html.replace(
+        marker,
+        `<div class="fig" id="${placeholder}">${svg}` +
+          `<details class="src"><summary>D2 source</summary><pre>${escapeHtml(source)}</pre></details>` +
+          `</div>`,
+      );
+    } catch (err) {
+      html = html.replace(
+        marker,
+        `<div class="fig" id="${placeholder}"><div class="d2-note warn">` +
+          `Figure failed: ${escapeHtml(String(err))}</div></div>`,
+      );
+    }
+  }
+  return html;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 const server = Bun.serve({
   port: PORT,
   async fetch(req) {
@@ -234,7 +294,7 @@ const server = Bun.serve({
       });
     }
     if (url.pathname === "/structure") {
-      return new Response(Bun.file(join(import.meta.dir, "..", "public", "structure.html")), {
+      return new Response(await structurePage(), {
         headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
       });
     }

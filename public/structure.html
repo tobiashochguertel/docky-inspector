@@ -58,6 +58,13 @@ table.fix td .where { color: #c4b5fd; font-size: 10px; }
 .legend .item.did b { color: #c4b5fd; }
 .legend .group { margin-top: 10px; padding-top: 8px; border-top: 1px solid #1e293b; }
 .legend .note { margin: 8px 0 0; font-size: 11px; color: #64748b; }
+.fig { margin: 4px 0 10px; }
+.fig svg { max-width: 100%; height: auto; display: block; }
+.fig .src { margin-top: 8px; }
+.fig .src summary { font: 11px ui-monospace, monospace; color: #6b7280; cursor: pointer; }
+.fig .src pre { background: #0b1220; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 12px; overflow-x: auto; font: 11px/1.45 ui-monospace, monospace; color: #93c5fd; margin: 6px 0 0; }
+.d2-note { background: #0b1220; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 12px; font: 11px ui-monospace, monospace; color: #64748b; }
+.d2-note.warn { border-color: #7c2d12; color: #fdba74; }
 </style>
 </head>
 <body>
@@ -154,8 +161,10 @@ tile vertically.</li>
 whole reason the rows stay aligned — a folder tile and an app tile occupy exactly the same box.</li>
 <li>Frames never overlap. Centre-to-centre distance is <code>(w₁+w₂)/2 + s</code>; with equal widths that is
 <code>w + s</code>, so the row advances by one frame plus one spacing per tile.</li>
-<li><b>Height</b> is composed from top to bottom: <code>h = 2p + i + l</code> — padding <var>p</var> above
-<em>and</em> below the icon, the icon <var>i</var>, then the reserved label row <var>l</var> appended after that.
+<li><b>Height</b> is composed from top to bottom: <code>h = 2p + i + l</code> — padding <var>p</var> at the top,
+the icon <var>i</var>, the reserved label row <var>l = g + text</var>, then padding <var>p</var> again at the very
+bottom. The second <var>p</var> is below the <em>label</em>, not below the icon; the gap between icon and label is
+<var>g</var>, which lives inside <var>l</var>. Measured on a live app tile: <code>8 + 40 + 2 + 10 + 8 = 68</code>.
 With labels off only <code>2p + i</code> remains, which is why a label adds exactly one row and never
 re-pads anything above it.</li>
 <li>The <b>running indicator</b> below the icon is an optional overlay — a dot for one window, a pill for several.
@@ -167,11 +176,19 @@ It is drawn outside the icon slot and takes no layout space, so switching it on 
 <div class="sec">
 <h2><span class="sw" id="sw-inside"></span>4 · Inside one tile — outer ring to painted pixels</h2>
 <p class="crumb">level 4, inside a tile</p>
-<div id="f-inside"></div>
+<p class="cap">Two tile kinds, drawn separately. Both stacks come from the frames Docky measured
+for a live tile, so the bands are what the layout actually produced rather than what the layout code
+implies. Each figure's D2 source is shown underneath.</p>
+
+<div class="fig" id="f-inside-app"></div>
+<div class="fig" id="f-inside-widget"></div>
+<div class="d2-note" id="d2-missing"></div>
 <ul>
 <li><b>Tile frame</b> — the reserved box. It has no visuals, only space.</li>
-<li><b>Padding</b> — <code>p</code> above the icon and below it, plus <code>iconPad</code> horizontally inside the
-frame. Empty space, never painted. Note the second <var>p</var> sits <em>between</em> icon and label row.</li>
+<li><b>Padding</b> — <code>p</code> at the top of the frame and again at the very bottom, below the label row, plus
+<code>iconPad</code> horizontally inside the frame. Empty space, never painted. The bottom band is easy to miss
+because nothing is drawn there, which is why the bands in the figures are read from Docky's own measurements
+rather than inferred from the layout code.</li>
 <li><b>Icon slot</b> — the icon's layout box. Its width depends on the tile kind, which is why the two tiles below
 differ: an <b>app tile</b> insets only by <code>iconPad</code>, so <code>i = w − 2·iconPad</code> and with the
 default of 0 the slot spans the frame; a <b>widget chrome tile</b> also reserves the fixed
@@ -543,124 +560,6 @@ same structure at three zoom levels.</li>
     return svg(760, y0 + th + 50, s);
   }
 
-  /* ---------- figure 4: inside one tile, drawn large ----------
-     Two variants, stacked in two ROWS on purpose: side by side their
-     leader lines crossed the other tile's box and became unreadable.
-     Each row keeps its own dimension stack, callout column and formulas. */
-  function figInside() {
-    const S = 2.05;
-    const P = (pt) => u(pt) * S;
-    const tw = P(G.w), th = P(G.h), ic = P(G.icon), lb = P(G.labelRow);
-    const pv = P(G.vPad), gp = P(G.gap), si = P(G.sideInset), ip = P(G.iconPad);
-    const ch = P(G.chromeInset);                       // fixed: floor(w * 3/32)
-    /* TileView scales the indicator with the tile size: 4x and 12x of this */
-    const sc = Math.max(0.5, Math.min(1, G.w / 48));
-    const dotR = P(G.m.indicatorThickness * sc / 2);
-    const x = 132, cx = x + tw + 128;
-    const band = (bx, by, bw, bh) => `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="4 3"/>`;
-    const label = (y, tx, ty, tw2, th2, cid) =>
-      `<defs><clipPath id="${cid}"><rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>` +
-      `<rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-opacity=".85"/>` +
-      `<text x="${r1(tx + tw2 / 2)}" y="${r1(ty + th2 * 0.85)}" text-anchor="middle" font-size="${r1(P(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#${cid})">${esc(G.sampleLabel ?? "Finder")}</text>`;
-    /* callout column for one row: sorted by y, then min-gap */
-    const callouts = (rows) => {
-      let body = "", prev = -Infinity;
-      [...rows].sort((a, b) => a[2] - b[2]).forEach(([t, color, want, ax, ay]) => {
-        const ty = Math.max(want, prev + 22);
-        prev = ty;
-        body += chip(cx, ty - 9, t, color, "start", 11, [ax, ay]);
-      });
-      return body;
-    };
-    let body = "";
-    /* ================= row 1: app tile — drawn from the measured frames ==
-       M holds the frames Docky measured for a real app tile this run:
-       icon/label/paint rects in tile-local points, and the bands between
-       them. Nothing here is re-derived, so the figure cannot disagree
-       with the dock. Bands come straight from the snapshot, which is why
-       the bottom padding shows up even though it is not obvious. */
-    const yA = 84;
-    const M = G.measured;
-    const P2 = (pt) => u(pt) * S;
-    const bx = (v) => x + P2(v), by = (v) => yA + P2(v);
-    const mf = M.icon, mL = M.label, mp = M.paint, bd = M.bands;
-    body += txt(x + tw / 2, yA - 16, "app tile — every band below is measured, not derived", "#e5e7eb", "middle", 11);
-    /* the empty regions, exactly as the layout produced them */
-    body += band(x, yA, tw, P2(bd.padTop));
-    body += band(x, by(mf[1] + mf[3]), tw, P2(bd.padGap));
-    body += band(x, by(mL[1] + mL[3]), tw, P2(bd.padBottom));
-    if (bd.insetL > 0) body += band(x, yA + P2(bd.padTop), P2(bd.insetL), P2(th - bd.padTop - bd.padBottom));
-    /* icon slot and its painted artwork */
-    body += `<rect x="${r1(bx(mf[0]))}" y="${r1(by(mf[1]))}" width="${r1(P2(mf[2]))}" height="${r1(P2(mf[3]))}" rx="${r1(P2(mf[2]) * 0.09)}" fill="${C.slotFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    body += `<rect x="${r1(bx(mp[0]))}" y="${r1(by(mp[1]))}" width="${r1(P2(mp[2]))}" height="${r1(P2(mp[3]))}" rx="${r1(P2(mp[2]) * 0.06)}" fill="${C.artFill}" stroke="${C.artStroke}" stroke-opacity=".8"/>`;
-    /* the label row's text box, clipped by the fixed side inset */
-    body += `<rect x="${r1(bx(mL[0]))}" y="${r1(by(mL[1]))}" width="${r1(P2(mL[2]))}" height="${r1(P2(mL[3]))}" rx="2" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    const tx2 = bx(mL[0] + si), tw2 = P2(mL[2] - si * 2), ty2 = by(mL[1]), th2 = P2(mL[3]);
-    body += `<defs><clipPath id="clip-a"><rect x="${r1(tx2)}" y="${r1(ty2)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>`;
-    body += `<rect x="${r1(tx2)}" y="${r1(ty2)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-width="1.2"/>`;
-    body += `<text x="${r1(bx(mL[0] + mL[2] / 2))}" y="${r1(ty2 + th2 * 0.82)}" text-anchor="middle" font-size="${r1(P2(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#clip-a)">${esc(G.sampleLabel ?? "Finder")}</text>`;
-    /* overlays, in the measured gap between icon and label row */
-    const dotA = { x: bx(mf[0] + mf[2] / 2), y: by(mf[1] + mf[3] + bd.labelGap / 2) };
-    body += `<circle cx="${r1(dotA.x)}" cy="${r1(dotA.y)}" r="${r1(P2(G.m.indicatorThickness * sc / 2))}" fill="${C.run}"/>`;
-    const pillW = P2(G.m.indicatorLength * sc), pillH = P2(G.m.indicatorThickness * sc);
-    body += `<rect x="${r1(bx(mf[0] + mf[2]) - pillW - 4)}" y="${r1(dotA.y - pillH / 2)}" width="${r1(pillW)}" height="${r1(pillH)}" rx="${r1(pillH / 2)}" fill="${C.run}"/>`;
-    body += `<circle cx="${r1(bx(mp[0] + mp[2] - P(4)))}" cy="${r1(by(mp[1] + P(4)))}" r="${r1(P2(4))}" fill="${C.badge}"/>`;
-    body += `<rect x="${x}" y="${yA}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    /* the measured stack, one bracket per band */
-    const segs = [[bd.padTop, "p"], [mf[3], "i"], [bd.padGap, "◆ g"], [mL[3], "text"], [bd.padBottom, "p"]];
-    let sy = 0;
-    segs.forEach(([h, lab], i) => {
-      if (h > 0) body += vdim(x - 52, by(sy), P2(h), lab, i === 2 ? C.did : i === 1 ? C.good : i === 3 ? C.warn : C.pad);
-      sy += h;
-    });
-    body += dim(x, yA + th + 46, tw, "w");
-    body += dim(bx(mf[0]), yA + th + 80, P2(mf[2]), "i");
-    body += callouts([
-      ["tile frame w × h", C.struct, yA + 6, x + tw, yA + 2],
-      [`padding p = ${bd.padTop}`, C.pad, by(bd.padTop / 2), x + tw, by(bd.padTop / 2)],
-      [`icon slot i = ${mf[2]}×${mf[3]}`, C.good, by(mf[1] + mf[3] / 2), x + tw, by(mf[1] + mf[3] / 2)],
-      [`painted = ${mp[2]}×${mp[3]}`, C.paint, by(mf[1] + mf[3] * 0.85), bx(mp[0] + mp[2] - 6), by(mp[1] + mp[3] - 10)],
-      [`◆ gap g = ${bd.labelGap}`, C.did, by(mf[1] + mf[3] + bd.labelGap / 2), x + tw, by(mf[1] + mf[3] + bd.labelGap / 2)],
-      [`label text = ${mL[2]}×${mL[3]}`, C.warn, by(mL[1] + mL[3] / 2), x + tw, by(mL[1] + mL[3] / 2)],
-      [`padding p = ${bd.padBottom}`, C.pad, by(mL[1] + mL[3] + bd.padBottom / 2), x + tw, by(mL[1] + mL[3] + bd.padBottom / 2)],
-      ["◆ side inset / side", C.did, ty2 + th2 / 2, tx2, ty2 + th2 / 2],
-      ["◆ indicator thickness", C.did, dotA.y, dotA.x, dotA.y],
-      ["notification badge", C.struct, by(mp[1] + P2(4)), bx(mp[0] + mp[2] - P2(4)), by(mp[1] + P2(4))],
-    ]);
-    body += chip(x, yA + th + 124, ["h = ", `${bd.padTop} + ${mf[3]} + ${bd.labelGap} + ${mL[3]} + ${bd.padBottom} = ${G.h}`], "#94a3b8", "start", 11);
-    body += chip(x + 430, yA + th + 124, ["measured", ""], "#64748b", "start", 11);
-
-    body += chip(x + 470, yA + th + 122, ["i = ", "w − 2·iconPad"], "#94a3b8", "start", 11);
-    /* ================= row 2: widget chrome tile ================= */
-    const yB = yA + th + 210;
-    const bW = { x: x + ch + ip, y: yB + ch + pv, w: tw - (ch + ip) * 2, h: th - (ch + pv) * 2 };
-    const lW = { x: bW.x, y: bW.y + bW.h - lb, w: bW.w, h: lb };
-    const dotW = { x: x + tw / 2, y: bW.y + bW.h + ch / 2 };
-    body += txt(x + tw / 2, yB - 14, "widget chrome tile — additionally inset by ◆ chrome", "#e5e7eb", "middle", 11);
-    /* contentInsets insets symmetrically: top AND bottom are chrome + p */
-    body += band(x, yB, tw, ch + pv) + band(x, bW.y + bW.h, tw, ch + pv);
-    if (ip > 0) body += band(x, yB + ch + pv, ch + ip, bW.h) + band(x + tw - ch - ip, yB + ch + pv, ch + ip, bW.h);
-    body += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h - lb)}" rx="${r1(ch)}" fill="${C.artFaint}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    body += `<rect x="${r1(lW.x)}" y="${r1(lW.y)}" width="${r1(lW.w)}" height="${r1(lW.h)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    body += `<circle cx="${r1(dotW.x)}" cy="${r1(dotW.y)}" r="${r1(dotR)}" fill="${C.run}"/>`;
-    body += `<rect x="${x}" y="${yB}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    body += `<rect x="${r1(bW.x)}" y="${r1(bW.y)}" width="${r1(bW.w)}" height="${r1(bW.h)}" rx="4" fill="none" stroke="${C.did}" stroke-width="1.5" stroke-dasharray="7 4"/>`;
-    body += vdim(x - 46, yB, ch + pv, "◆", C.did);
-    body += dim(x, yB + th + 46, tw, "w");
-    body += dim(bW.x, yB + th + 80, bW.w, "content box");
-    body += dim(x, yB + th + 80, ch, "◆");
-    body += callouts([
-      ["tile frame w × h", C.struct, yB + 6, x + tw, yB + 2],
-      ["◆ chrome inset (all sides)", C.did, yB + (ch + pv) * 0.5, x + tw, yB + (ch + pv) * 0.5],
-      ["widget content box", C.good, bW.y + (bW.h - lb) * 0.45, x + tw, bW.y + (bW.h - lb) * 0.45],
-      ["label row l", C.warn, lW.y + lb * 0.5, x + tw, lW.y + lb * 0.5],
-      ["◆ indicator thickness", C.did, dotW.y, dotW.x, dotW.y],
-      ["iconPad (configurable)", C.pad, bW.y + bW.h * 0.85, bW.x - 1, bW.y + bW.h * 0.85],
-    ]);
-    body += chip(x, yB + th + 122, ["content box = ", "w − 2·(◆ chrome + iconPad)"], "#94a3b8", "start", 11);
-    body += chip(x + 470, yB + th + 122, ["h = ", "2·(chrome + p) + content"], "#94a3b8", "start", 10);
-    return svg(cx + 420, yB + th + 150, body);
-  }
 
   /* ---------- figure 4b: label row magnified + the four placements ---- */
   function figLabelDetail() {
@@ -964,7 +863,6 @@ same structure at three zoom levels.</li>
     document.getElementById("f-bar").innerHTML = figBar();
     document.getElementById("f-sections").innerHTML = figSections();
     document.getElementById("f-tiles").innerHTML = figTiles();
-    document.getElementById("f-inside").innerHTML = figInside();
     document.getElementById("f-labeldetail").innerHTML = figLabelDetail();
     document.getElementById("f-variants").innerHTML = figVariants();
     document.getElementById("f-guides").innerHTML = figGuides();
