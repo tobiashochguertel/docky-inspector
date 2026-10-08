@@ -100,6 +100,7 @@ so nothing is highlighted there. Sections 1–4 explain one level each, §6 the 
       <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="2" y1="11" x2="20" y2="5" stroke="#fdba74" stroke-opacity=".7" stroke-dasharray="2 3"/><circle cx="20" cy="5" r="2" fill="#fdba74"/></svg><span><b>leader line</b> — chip points at a part</span></div>
       <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="3" y1="12" x2="19" y2="12" stroke="#c4b5fd"/><line x1="3" y1="8" x2="3" y2="16" stroke="#c4b5fd"/><line x1="19" y1="8" x2="19" y2="16" stroke="#c4b5fd"/></svg><span><b>dimension</b> — <code>|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;|</code>, rotated for height</span></div>
       <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="2" y1="11" x2="16" y2="11" stroke="#c4b5fd"/><path d="M16 7 L22 11 L16 15 Z" fill="#c4b5fd"/></svg><span><b>zoom step</b> — continues outward-in</span></div>
+      <div class="item did"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="rgba(244, 114, 182, 0.12)" stroke="#f472b6" stroke-dasharray="3 3"/><rect x="8" y="8" width="6" height="6" rx="1.5" fill="#f2e3cc" stroke="#22c55e"/></svg><span><b>◆ fixed</b> — compiled in, see §5</span></div>
     </div>
     <p class="note">A chip inherits the colour of the part it names — <b>and so does its leader line</b>. Chips whose part
     is symbolic use <b style="color:#c4b5fd">violet</b>, which never appears in the dock: anything violet is this
@@ -170,8 +171,10 @@ It is drawn outside the icon slot and takes no layout space, so switching it on 
 <li><b>Tile frame</b> — the reserved box. It has no visuals, only space.</li>
 <li><b>Padding</b> — <code>p</code> above the icon and below it, plus <code>iconPad</code> horizontally inside the
 frame. Empty space, never painted. Note the second <var>p</var> sits <em>between</em> icon and label row.</li>
-<li><b>Icon slot</b> — the icon's layout box <var>i</var>. Fixed for every tile kind, and as wide as the frame when
-labels sit below.</li>
+<li><b>Icon slot</b> — the icon's layout box <code>i = w − 2·(chrome + iconPad)</code>. For a plain app tile the
+inset is <code>iconPad</code> only (0 by default, so the slot spans the frame); a widget-chrome tile additionally
+carries the fixed <code>chromeInset</code>, which is why its slot stops short of both edges. The left tile below is
+your current app tile, the right one the widget variant.</li>
 <li><b>Painted artwork</b> — what is drawn inside the slot. For an app icon it fills the slot and the perceived gap
 comes from its transparency; for folders and minimized cards the painted box is smaller (§6).</li>
 <li><b>Label row</b> — one reservation <code>l = g + ceil(font × 1.2)</code>: the fixed gap <var>g</var> above the
@@ -241,7 +244,7 @@ same structure at three zoom levels.</li>
   const G = {
     w: 40, baseH: 56, h: 68, icon: 40, labelText: 10, labelRow: 12, gap: 2, sideInset: 2,
     vPad: 8, iconPad: 0, spacing: 0, divider: 0, n: 4, labelCount: 51,
-    paintFolder: [32.3, 35.3], paintMin: [28, 28.8], sampleLabel: "Finder",
+    paintFolder: [32.3, 35.3], paintMin: [28, 28.8], sampleLabel: "Finder", chromeInset: 3,
     fontSize: 8, placement: "below",
     m: { iconLabelGap: 2, sideInset: 2, labelHeight: 10, labelRowHeight: 12, maxSidewaysLabelWidth: 96,
          folderChromeFraction: 0.06, mosaicScale: 0.36, cardHeightScale: 0.8, badgeScale: 0.8,
@@ -515,60 +518,78 @@ same structure at three zoom levels.</li>
   }
 
   /* ---------- figure 4: inside one tile, drawn large ----------
-     Vertical stack, top to bottom:  p | i | p | l
-     `l` is the reserved label row (its own internal gap g plus the text),
-     and the second p sits between the icon and the label row. */
+     Two variants side by side, because they are NOT the same:
+       left  — app tile: padding p, icon i, padding p, label row l
+       right — widget chrome tile: the same, plus the fixed chrome inset
+     Vertical stack, top to bottom:  p | i | p | l   (l = gap g + text) */
   function figInside() {
-    const S = 2.2;
+    const S = 1.85;
     const P = (pt) => u(pt) * S;
     const tw = P(G.w), th = P(G.h), ic = P(G.icon), lb = P(G.labelRow);
     const pv = P(G.vPad), gp = P(G.gap), si = P(G.sideInset), ip = P(G.iconPad);
-    const x = 132, y = 76;
-    const ix = x + ip, iy = y + pv;
-    const ly = iy + ic + pv;
-    const tx = ix + si, tw2 = ic - si * 2, ty = ly + gp, th2 = lb - gp;
-    let s = `<defs><clipPath id="clip-label"><rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>`;
-    const band = (bx, by, bw, bh) => `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="4 3"/>`;
-    s += band(x, y, tw, pv) + band(x, iy + ic, tw, pv);
-    if (ip > 0) s += band(x, y + pv, ip, ic) + band(x + tw - ip, y + pv, ip, ic);
-    s += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    s += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
-    s += `<rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-opacity=".85"/>`;
-    s += `<text x="${r1(ix + ic / 2)}" y="${r1(ty + th2 * 0.85)}" text-anchor="middle" font-size="${r1(P(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#clip-label)">${esc(G.sampleLabel ?? "Finder")}</text>`;
-    const dotX = x + tw / 2, dotY = iy + ic + pv / 2, dotR = P(G.m.indicatorThickness / 2);
-    s += `<circle cx="${r1(dotX)}" cy="${r1(dotY)}" r="${r1(dotR)}" fill="${C.run}"/>`;
-    s += `<circle cx="${r1(ix + ic - P(4))}" cy="${r1(iy + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
-    s += `<rect x="${x}" y="${y}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
-    const cx = x + tw + 112;
+    const ch = P(G.chromeInset);                       // fixed: floor(w * 3/32)
+    const dotR = P(G.m.indicatorThickness / 2);
+    const y = 84;
+    /* one tile variant: inset = horizontal padding inside the frame */
+    const variant = (x, inset, opts) => {
+      const ix = x + inset, iy = y + pv, ly = iy + ic + pv;
+      const tx = ix + si, tw2 = ic - si * 2, ty = ly + gp, th2 = lb - gp;
+      const cid = opts.cid;
+      let s = `<defs><clipPath id="${cid}"><rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}"/></clipPath></defs>`;
+      const band = (bx, by, bw, bh) => `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="4 3"/>`;
+      s += band(x, y, tw, pv) + band(x, iy + ic, tw, pv);
+      if (inset > 0) s += band(x, y + pv, inset, ic) + band(x + tw - inset, y + pv, inset, ic);
+      s += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${C.artFill}" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+      s += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="3" fill="${C.labelFill}" stroke="${C.label}" stroke-opacity=".9" stroke-dasharray="7 4"/>`;
+      s += `<rect x="${r1(tx)}" y="${r1(ty)}" width="${r1(tw2)}" height="${r1(th2)}" fill="none" stroke="${C.artStroke}" stroke-opacity=".85"/>`;
+      s += `<text x="${r1(ix + ic / 2)}" y="${r1(ty + th2 * 0.85)}" text-anchor="middle" font-size="${r1(P(G.labelText) / 0.72)}" fill="#0b1220" clip-path="url(#${cid})">${esc(G.sampleLabel ?? "Finder")}</text>`;
+      const dotX = x + tw / 2, dotY = iy + ic + pv / 2;
+      s += `<circle cx="${r1(dotX)}" cy="${r1(dotY)}" r="${r1(dotR)}" fill="${C.run}"/>`;
+      if (opts.badge) s += `<circle cx="${r1(ix + ic - P(4))}" cy="${r1(iy + P(4))}" r="${r1(P(4))}" fill="${C.badge}"/>`;
+      s += `<rect x="${x}" y="${y}" width="${r1(tw)}" height="${r1(th)}" rx="6" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="6 4"/>`;
+      s += txt(x + tw / 2, y - 12, opts.caption, "#e5e7eb", "middle", 11);
+      return { s, ix, iy, ly, dotX, dotY, tx, ty, tw2, th2 };
+    };
+    const xL = 132, xR = xL + tw + 96;
+    const A = variant(xL, ip, { cid: "clip-a", caption: "app tile", badge: true });
+    const B = variant(xR, ch + ip, { cid: "clip-b", caption: "widget chrome tile", badge: false });
+    let s = A.s + B.s;
+    /* vertical dimension stack on the left: p, i, p, l */
+    s += vdim(xL - 52, y, pv, "p", C.pad);
+    s += vdim(xL - 52, A.iy, ic, "i", C.good);
+    s += vdim(xL - 52, A.iy + ic, pv, "p", C.pad);
+    s += vdim(xL - 52, A.ly, lb, "l", C.warn);
+    /* horizontal dimensions: frame w, icon i, the fixed chrome inset */
+    s += dim(xL, y + th + 44, tw, "w");
+    s += dim(A.ix, y + th + 78, ic, "i");
+    s += dim(B.ix, y + th + 78, ch, "◆");
+    /* callouts: every constant, ◆ marks the fixed ones */
+    const cx = xR + tw + 128;
     const rows = [
-      ["tile frame w × h", C.struct, y + 6, x + tw, y + 2],
-      ["padding p (top)", C.pad, y + pv * 0.5, x + tw, y + pv * 0.5],
-      ["icon slot i", C.good, iy + ic * 0.45, x + tw, iy + ic * 0.45],
-      ["painted artwork", C.paint, iy + ic * 0.85, ix + ic - 6, iy + ic - 12],
-      ["padding p (bottom)", C.pad, iy + ic + pv * 0.5, x + tw, iy + ic + pv * 0.5],
-      ["label row l", C.warn, ly + lb * 0.5, x + tw, ly + lb * 0.5],
-      ["gap g inside l", C.did, ly + gp * 0.6, x + tw, ly + gp * 0.6],
-      ["side inset / side", C.did, ty + th2 * 0.5, tx, ty + th2 * 0.5],
-      ["running indicator", C.struct, dotY, dotX, dotY],
-      ["notification badge", C.struct, iy + P(4), ix + ic - P(4), iy + P(4)],
+      ["tile frame w × h", C.struct, y + 6, xL + tw, y + 2],
+      ["padding p (top)", C.pad, y + pv * 0.5, xL + tw, y + pv * 0.5],
+      ["icon slot i", C.good, A.iy + ic * 0.45, xL + tw, A.iy + ic * 0.45],
+      ["painted artwork", C.paint, A.iy + ic * 0.85, A.ix + ic - 6, A.iy + ic - 12],
+      ["padding p (bottom)", C.pad, A.iy + ic + pv * 0.5, xL + tw, A.iy + ic + pv * 0.5],
+      ["label row l", C.warn, A.ly + lb * 0.5, xL + tw, A.ly + lb * 0.5],
+      ["◆ gap g inside l", C.did, A.ly + gp * 0.6, xL + tw, A.ly + gp * 0.6],
+      ["◆ side inset / side", C.did, A.ty + A.th2 * 0.5, A.tx, A.ty + A.th2 * 0.5],
+      ["◆ indicator thickness", C.did, A.dotY, A.dotX, A.dotY],
+      ["notification badge", C.struct, A.iy + P(4), A.ix + ic - P(4), A.iy + P(4)],
+      ["◆ chrome inset (widget chrome)", C.did, y + pv + ic * 0.5, B.ix - 1, y + pv + ic * 0.5],
+      ["iconPad (configurable)", C.pad, y + pv + ic * 0.8, xR + ch + ip + 1, y + pv + ic * 0.8],
     ];
-    /* sort by preferred y first: a monotonic pass alone can only push
-       later callouts down, which stranded the badge at the bottom */
     let prev = -Infinity;
     [...rows].sort((a, b) => a[2] - b[2]).forEach(([label, color, want, ax, ay]) => {
       const ty2 = Math.max(want, prev + 22);
       prev = ty2;
       s += chip(cx, ty2 - 9, label, color, "start", 11, [ax, ay]);
     });
-    s += vdim(x - 52, y, pv, "p", C.pad);
-    s += vdim(x - 52, iy, ic, "i", C.good);
-    s += vdim(x - 52, iy + ic, pv, "p", C.pad);
-    s += vdim(x - 52, ly, lb, "l", C.warn);
-    s += dim(x, y + th + 44, tw, "w");
-    s += dim(ix, y + th + 78, ic, "i");
-    s += chip(x, y + th + 118, ["h = ", "2p + i + l"], "#94a3b8", "start", 11);
-    s += chip(x + 300, y + th + 118, ["l = ", "g + text"], "#94a3b8", "start", 11);
-    return svg(cx + 300, y + th + 142, s);
+    /* formulas */
+    s += chip(xL, y + th + 132, ["h = ", "2p + i + l"], "#94a3b8", "start", 11);
+    s += chip(xL + 260, y + th + 132, ["l = ", "g + text"], "#94a3b8", "start", 11);
+    s += chip(xL + 470, y + th + 132, ["i = ", "w − 2·(chrome + iconPad)"], "#94a3b8", "start", 11);
+    return svg(cx + 320, y + th + 156, s);
   }
 
   /* ---------- figure 6: variants ---------- */
@@ -807,6 +828,7 @@ same structure at three zoom levels.</li>
       labelRow: met.labelRowHeight ?? Math.ceil(d.fontSize * 1.2) + (met.iconLabelGap ?? 2),
       gap: met.iconLabelGap ?? 2, sideInset: met.sideInset ?? 2,
       vPad: d.padding?.v ?? 0, iconPad: d.padding?.icon ?? 0, spacing: d.spacing,
+      chromeInset: met.chromeInset ?? 3,
       labelCount: d.tiles.length, fontSize: d.fontSize, placement: d.placement,
       m: { ...G.m, ...met },
     });
