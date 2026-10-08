@@ -49,7 +49,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="1.5" y="1.5" width="19" height="19" rx="3" fill="none" stroke="#cbd5e1" stroke-opacity=".65" stroke-dasharray="4 3"/></svg><span><b>tile frame</b> — reserved box</span></div>
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="2" fill="rgba(244, 114, 182, 0.12)" stroke="#f472b6" stroke-opacity=".5" stroke-dasharray="3 3"/></svg><span><b>padding</b> — empty space</span></div>
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" stroke-opacity=".85" stroke-dasharray="4 3"/></svg><span><b>icon slot</b> — layout box</span></div>
-    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" stroke-opacity=".85" stroke-dasharray="4 3"/><rect x="6" y="6" width="10" height="10" rx="2" fill="rgba(253, 186, 116, 0.6)" stroke="#fdba74"/></svg><span><b>painted artwork</b> — every drawn pixel, always orange</span></div>
+    <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="3.5" width="15" height="15" rx="3" fill="rgba(34, 197, 94, 0.12)" stroke="#22c55e" stroke-opacity=".85" stroke-dasharray="4 3"/><rect x="6" y="6" width="10" height="10" rx="2" fill="#f2e3cc" stroke="#a16207"/></svg><span><b>painted artwork</b> — every drawn pixel, always this sand</span></div>
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3.5" y="6.5" width="15" height="9" rx="2" fill="rgba(250, 204, 21, 0.27)" stroke="#facc15" stroke-opacity=".85" stroke-dasharray="4 3"/></svg><span><b>label row</b> — reserved for text</span></div>
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="1.5" y="4.5" width="19" height="13" rx="3" fill="none" stroke="#93c5fd" stroke-opacity=".7" stroke-dasharray="5 3"/></svg><span><b>bar</b> / <b>section</b> — containers</span></div>
     <div class="item"><svg width="22" height="22" viewBox="0 0 22 22"><line x1="11" y1="2" x2="11" y2="20" stroke="#6b7280"/></svg><span><b>divider</b> — between sections</span></div>
@@ -163,14 +163,18 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 (async () => {
   const U = 2.5;
   const T = { w: 40, h: 68, icon: 40, label: 12, pad: 8, gap: 8, spacing: 0, paintFolder: [36, 36], paintMin: [32, 27] };
+  /* Painted artwork is a light, low-chroma sand so it never competes with the
+     thin dashed structure lines it sits inside; its own outline is a deeper
+     amber so small shapes stay readable on a dark ground. */
   const C = {
     barFill: "#0b1220", bar: "#4b5563",
-    frame: "#cbd5e1", slot: "#22c55e", slotFill: "rgba(34, 197, 94, 0.12)", appFill: "#fb9231",
+    frame: "#cbd5e1", slot: "#22c55e", slotFill: "rgba(34, 197, 94, 0.12)", appFill: "#f2e3cc",
     pad: "#f472b6", padFill: "rgba(244, 114, 182, 0.12)",
     label: "#facc15", labelFill: "rgba(250, 204, 21, 0.27)",
-    struct: "#cbd5e1", info: "#93c5fd", good: "#4ade80", warn: "#fde047", paint: "#fdba74",
-    /* every drawn pixel is painted artwork, so it is always this one colour */
-    artFill: "#fdba74", artDim: "rgba(253, 186, 116, 0.33)", artFaint: "rgba(253, 186, 116, 0.2)", chrome: "rgba(255, 255, 255, 0.2)",
+    struct: "#cbd5e1", info: "#93c5fd", good: "#4ade80", warn: "#fde047",
+    artFill: "#f2e3cc", artStroke: "#a16207", chrome: "rgba(255, 255, 255, 0.2)",
+    artDim: "rgba(197, 168, 122, 0.75)", artFaint: "rgba(242, 227, 204, 0.28)",
+    paint: "#f2e3cc",
     /* overlays float above the tile, so they carry their own colours */
     run: "#e5e7eb", badge: "#ef4444",
     /* didactic marks — annotation only, never part of the structure */
@@ -207,49 +211,56 @@ are measured from your running dock. Every box is drawn to true scale at <span i
       const pw = u(paint ? paint[0] : 36), ph = u(paint ? paint[1] : 36);
       const px = x + (s - pw) / 2, py = y + (s - ph) / 2, pad = Math.max(2, s * 0.025);
       const c = (pw - pad * 2 - 2) / 2;
-      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="${r1(s * 0.11)}" fill="${C.chrome}"/>`;
+      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="${r1(s * 0.11)}" fill="${C.chrome}" stroke="${C.frame}" stroke-opacity=".45" stroke-width="1"/>`;
       for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++)
-        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1.5" fill="${C.artFill}"/>`;
+        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1.5" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="1" stroke-opacity=".55"/>`;
       return r;
     }
     if (kind === "min") {
       const pw = u(paint ? paint[0] : 32), ph = u(paint ? paint[1] : 27);
       const px = x + (s - pw) / 2, py = y + s - ph - Math.max(2, s * 0.04);
-      return `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="${C.artFill}"/>` +
+      return `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="1" stroke-opacity=".6"/>` +
         `<circle cx="${r1(px + pw)}" cy="${r1(py + ph)}" r="5" fill="${C.artFill}" stroke="#0b1220"/>`;
     }
     if (kind === "minph") {
       const pw = u(18), ph = u(16);
-      return `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + s - ph - 6)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="${C.artDim}"/>`;
+      return `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + s - ph - 6)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="${C.artDim}" stroke="${C.artStroke}" stroke-opacity=".45"/>`;
     }
     if (kind === "launchpad") {
       const g = s * 0.9, pad = Math.max(2, s * 0.03), c = (g - pad * 2 - 4) / 3;
       const px = x + (s - g) / 2, py = y + (s - g) / 2;
-      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(g)}" height="${r1(g)}" rx="${r1(s * 0.1)}" fill="${C.chrome}"/>`;
+      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(g)}" height="${r1(g)}" rx="${r1(s * 0.1)}" fill="${C.chrome}" stroke="${C.frame}" stroke-opacity=".45" stroke-width="1"/>`;
       for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
-        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1" fill="${C.artFill}"/>`;
+        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="0.8" stroke-opacity=".5"/>`;
       return r;
     }
-    if (kind === "trash") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.09)}" fill="${C.artFill}"/>`;
-    if (kind === "widget") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s * 0.78)}" rx="${r1(s * 0.07)}" fill="${C.artFaint}" stroke="${C.artFill}" stroke-opacity=".5"/>`;
+    if (kind === "trash") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.09)}" fill="${C.artFill}" stroke="${C.artStroke}" stroke-width="1" stroke-opacity=".6"/>`;
+    if (kind === "widget") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s * 0.78)}" rx="${r1(s * 0.07)}" fill="${C.artFaint}" stroke="${C.artStroke}" stroke-opacity=".5"/>`;
     if (kind === "spacer") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.07)}" fill="url(#hatch)" stroke="#4b5563" stroke-opacity=".7" stroke-dasharray="4 3"/>`;
     return "";
   }
 
   // ---- one tile, drawn at the origin -------------------------------------
+  /* Fills first, strokes last. An opaque fill drawn after a dashed line eats
+     the inner half of that line — with 36pt slots and 1px dashes that made
+     the structure unreadable. */
   function tileInner(o) {
     const tw = u(T.w), th = u(T.h), ic = u(T.icon), lb = u(T.label), pd = u(T.pad);
     const ix = (tw - ic) / 2, iy = pd, ly = th - lb;
     const isApp = !o.kind || o.kind === "app";
-    let s = "";
-    if (o.pad) s += `<rect x="${r1(ix)}" y="0" width="${r1(ic)}" height="${r1(iy + ic)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
-    s += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${isApp ? C.appFill : C.slotFill}" stroke="${C.slot}" stroke-opacity=".85" stroke-dasharray="5 3"/>`;
-    if (o.label !== false) s += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="2" fill="${o.label === "none" ? "url(#hatch)" : C.labelFill}" stroke="${o.label === "none" ? "#4b5563" : C.label}" stroke-opacity=".85" stroke-dasharray="5 3"/>`;
-    if (o.kind && o.kind !== "app") s += art(ix, iy, ic, o.kind, o.paint);
-    if (o.run) s += `<circle cx="${r1(tw / 2)}" cy="${r1(iy + ic + 5)}" r="3.5" fill="${C.run}"/>`;
-    if (o.badge) s += `<circle cx="${r1(ix + ic - 3)}" cy="${r1(iy + 3)}" r="4" fill="${C.badge}"/>`;
-    s += `<rect x="0" y="0" width="${r1(tw)}" height="${r1(th)}" rx="4" fill="none" stroke="${C.frame}" stroke-opacity=".65" stroke-dasharray="4 3"/>`;
-    return s;
+    const noLabel = o.label === "none";
+    let fill = "", line = "";
+    if (o.pad) fill += `<rect x="${r1(ix)}" y="0" width="${r1(ic)}" height="${r1(iy + ic)}" fill="${C.padFill}"/>`;
+    fill += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${isApp ? C.appFill : C.slotFill}"/>`;
+    if (o.label !== false) fill += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="2" fill="${noLabel ? "url(#hatch)" : C.labelFill}"/>`;
+    if (o.kind && o.kind !== "app") fill += art(ix, iy, ic, o.kind, o.paint);
+    if (o.run) fill += `<circle cx="${r1(tw / 2)}" cy="${r1(iy + ic + 5)}" r="3.5" fill="${C.run}"/>`;
+    if (o.badge) fill += `<circle cx="${r1(ix + ic - 3)}" cy="${r1(iy + 3)}" r="4" fill="${C.badge}"/>`;
+    if (o.pad) line += `<rect x="${r1(ix)}" y="0" width="${r1(ic)}" height="${r1(iy + ic)}" fill="none" stroke="${C.pad}" stroke-opacity=".5" stroke-dasharray="3 3"/>`;
+    line += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="none" stroke="${C.slot}" stroke-opacity=".9" stroke-dasharray="5 3"/>`;
+    if (o.label !== false) line += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="2" fill="none" stroke="${noLabel ? "#64748b" : C.label}" stroke-opacity=".9" stroke-dasharray="5 3"/>`;
+    line += `<rect x="0" y="0" width="${r1(tw)}" height="${r1(th)}" rx="4" fill="none" stroke="${C.frame}" stroke-opacity=".7" stroke-dasharray="4 3"/>`;
+    return fill + line;
   }
   const tile = (x, y, o = {}) => {
     const sc = o.sc ?? 1;
@@ -461,9 +472,9 @@ are measured from your running dock. Every box is drawn to true scale at <span i
       let t = `<rect x="${r1(x)}" y="${y}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.08)}" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="6 4"/>`;
       if (paint) {
         const pw = u(paint[0]) * sc, ph = u(paint[1]) * sc;
-        t += `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + (s - ph) / 2)}" width="${r1(pw)}" height="${r1(ph)}" rx="4" fill="${C.paint}" fill-opacity=".35" stroke="${C.paint}"/>`;
+        t += `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + (s - ph) / 2)}" width="${r1(pw)}" height="${r1(ph)}" rx="4" fill="${C.artFill}" stroke="${C.artStroke}"/>`;
       } else {
-        t += `<rect x="${r1(x)}" y="${y}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.08)}" fill="${C.appFill}"/>`;
+        t += `<rect x="${r1(x)}" y="${y}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.08)}" fill="${C.appFill}" stroke="${C.artStroke}" stroke-opacity=".5"/>`;
       }
       t += chip(x + s, y + s + 8, "painted", C.paint, "end");
       t += txt(x + s / 2, y + s + 36, name, "#e5e7eb", "middle");
