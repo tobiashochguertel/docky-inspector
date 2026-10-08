@@ -216,26 +216,27 @@ are measured from your running dock. Every box is drawn to true scale at <span i
   function figZoom() {
     const PW = 186, GAP = 40, base = 170;
     const p = [];
-    // panel 1 — the bar
+    // panel 1 — the bar, focus = one whole section (2 tiles side by side)
+    const s3 = 0.22, tw3 = u(T.w) * s3, th3 = u(T.h) * s3, ty1 = base - 120 + (120 - th3) / 2;
     let a = `<rect x="0" y="${base - 120}" width="${PW}" height="120" rx="8" fill="${C.barFill}" stroke="${C.bar}"/>`;
-    const s3 = 0.22;
-    a += tile(10, base - 100, { sc: s3 }) + tile(34, base - 100, { sc: s3 });
-    a += `<line x1="60" y1="${base - 100}" x2="60" y2="${base - 22}" stroke="#6b7280"/>`;
-    a += tile(66, base - 100, { sc: s3 }) + tile(90, base - 100, { sc: s3 });
-    a += `<line x1="116" y1="${base - 100}" x2="116" y2="${base - 22}" stroke="#6b7280"/>`;
-    a += tile(122, base - 100, { sc: s3 }) + tile(146, base - 100, { sc: s3 });
-    a += focus(63, base - 104, 48, 84);
+    a += tile(10, ty1, { sc: s3 }) + tile(34, ty1, { sc: s3 });
+    a += `<line x1="60" y1="${r1(ty1)}" x2="60" y2="${r1(ty1 + th3)}" stroke="#6b7280"/>`;
+    a += tile(66, ty1, { sc: s3 }) + tile(90, ty1, { sc: s3 });
+    a += `<line x1="116" y1="${r1(ty1)}" x2="116" y2="${r1(ty1 + th3)}" stroke="#6b7280"/>`;
+    a += tile(122, ty1, { sc: s3 }) + tile(146, ty1, { sc: s3 });
+    a += focus(64, ty1 - 2, tw3 * 2 + 2 + 4, th3 + 4);
     p.push(a + txt(PW / 2, base + 18, "the bar", C.info, "middle"));
-    // panel 2 — a section
+    // panel 2 — a section, focus = one whole tile
+    const s2 = 0.45, tw2 = u(T.w) * s2, th2 = u(T.h) * s2, ty2 = base - 118;
     let b = `<rect x="0" y="${base - 130}" width="${PW}" height="130" rx="8" fill="${C.barFill}" stroke="${C.info}" stroke-opacity=".7" stroke-dasharray="5 3"/>`;
-    b += tile(14, base - 118, { sc: 0.45 }) + tile(70, base - 118, { sc: 0.45 }) + tile(126, base - 118, { sc: 0.45 });
-    b += `<g transform="translate(70,${base - 118}) scale(0.45)">${slotRing()}</g>`;
+    b += tile(14, ty2, { sc: s2 }) + tile(70, ty2, { sc: s2 }) + tile(126, ty2, { sc: s2 });
+    b += focus(68, ty2 - 2, tw2 + 4, th2 + 4);
     p.push(b + txt(PW / 2, base + 18, "a section", C.info, "middle"));
-    // panel 3 — a tile
+    // panel 3 — a tile, focus = the icon slot
     let c = tile(43, base - u(T.h), {});
     c += `<g transform="translate(43,${base - u(T.h)})">${slotRing()}</g>`;
     p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle"));
-    // panel 4 — the icon slot and the painted artwork
+    // panel 4 — the icon slot, focus = the painted artwork
     const sl = 120, sx = 33, sy = base - sl;
     let d = `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
     d += art(sx, sy, sl, "folder", T.paintFolder);
