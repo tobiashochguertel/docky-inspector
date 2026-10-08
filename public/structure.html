@@ -80,10 +80,14 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 <p class="crumb">level 1</p>
 <div id="f-bar"></div>
 <ul>
-<li>The bar is the only element that touches the screen. Everything else is <em>inside</em> it.</li>
-<li>It adds its own padding around the tile row (<span class="live" id="b-pad">…</span>), so the first and last tile never sit flush against the screen edge.</li>
-<li>Its height is derived: bar height = tile height + top/bottom padding. Grow a label and the bar grows with it.</li>
-<li>The bar owns no visuals of its own — background and separation only. The row of tiles is its content.</li>
+<li>The bar is the only element that touches the screen. Everything else is <em>inside</em> it: the dashed <b>content box</b> is the tiles, and everything between that box and the bar edge is <b>padding</b>.</li>
+<li><b>Width (x)</b> is as wide as its content plus its own padding on both ends:
+<code>width = Σ tile widths + Σ spacings + Σ divider widths + 2 × bar padding</code>.
+Here that is <span class="live" id="b-width">…</span> — spacing and dividers are zero in this example, but both belong in the sum, so the formula still holds when they are not.</li>
+<li><b>Height (y)</b> is one tile tall, because every tile has the same height:
+<code>height = tile height + 2 × bar padding</code> = <span class="live" id="b-height">…</span>. Grow a label and both the tile and the bar grow with it.</li>
+<li>Width is derived from the <em>number</em> of tiles; height is derived from their <em>size</em>. Adding an app widens the bar, resizing an icon does not — it changes every tile at once.</li>
+<li>The bar owns no visuals of its own: background and separation only. The tiles are its entire content.</li>
 </ul>
 </div>
 
@@ -198,6 +202,14 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     `<line x1="${r1(x)}" y1="${r1(y - 4)}" x2="${r1(x)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".8"/>` +
     `<line x1="${r1(x + w)}" y1="${r1(y - 4)}" x2="${r1(x + w)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".8"/>` +
     chip(x + w / 2, y - 21, s, color, "middle");
+  /* vertical dimension: bracket along the y-axis with a rotated label */
+  const vdim = (x, y, h, s, color = C.did) =>
+    `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x)}" y2="${r1(y + h)}" stroke="${color}" stroke-opacity=".8"/>` +
+    `<line x1="${r1(x - 4)}" y1="${r1(y)}" x2="${r1(x + 4)}" y2="${r1(y)}" stroke="${color}" stroke-opacity=".8"/>` +
+    `<line x1="${r1(x - 4)}" y1="${r1(y + h)}" x2="${r1(x + 4)}" y2="${r1(y + h)}" stroke="${color}" stroke-opacity=".8"/>` +
+    `<g transform="translate(${r1(x - 8)},${r1(y + h / 2)}) rotate(-90)">${chip(0, -8, s, color, "end")}</g>`;
+  const vtxt = (x, y, s, color = C.did, size = 10) =>
+    `<g transform="translate(${r1(x)},${r1(y)}) rotate(-90)">${txt(0, 0, s, color, "start", size)}</g>`;
   const svg = (w, h, body) => `<svg class="fig" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${body}</svg>`;
   /* zoom region: didactic. Backdrop goes behind the content, the outline on
    top, so highlighting never washes out what it marks. */
@@ -320,19 +332,41 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 
   // ---- figure 1: the bar --------------------------------------------------
   function figBar() {
-    const padPx = u(T.pad), tw = u(T.w), th = u(T.h);
-    const barH = th + padPx * 2, barY = 60, barX = 96;
-    const n = 4, barW = n * tw + (n - 1) * u(T.spacing) + padPx * 2;
-    let s = `<rect x="${barX}" y="${barY}" width="${r1(barW)}" height="${r1(barH)}" rx="10" fill="${C.barFill}" stroke="${C.bar}"/>`;
-    s += `<rect x="${barX}" y="${barY}" width="${r1(padPx)}" height="${r1(barH)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
-    s += `<rect x="${r1(barX + barW - padPx)}" y="${barY}" width="${r1(padPx)}" height="${r1(barH)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
-    for (let i = 0; i < n; i++) s += tile(barX + padPx + i * (tw + u(T.spacing)), barY + padPx, i === 0 ? { run: true } : {});
-    s += chip(barX, barY - 24, "the bar", C.info);
-    s += chip(barX + barW, barY - 24, "the tile row — its content", C.struct, "end");
-    s += ln(barX + padPx / 2, barY + barH + 2, barX + padPx / 2, barY + barH - 10, C.pad);
-    s += chip(barX + padPx / 2, barY + barH + 6, `bar padding ${T.pad}pt`, C.pad, "middle");
-    s += dim(barX + padPx, barY + barH + 40, barW - padPx * 2, "bar = tile height + 2 × padding", C.info);
-    return svg(barX + barW + 60, barY + barH + 60, s);
+    const padPx = u(T.pad), tw = u(T.w), th = u(T.h), sp = u(T.spacing);
+    const n = 4;
+    const barX = 176, barY = 76;
+    const contentW = n * tw + (n - 1) * sp;
+    const barW = contentW + padPx * 2, barH = th + padPx * 2;
+    let s = "";
+    /* the bar surface */
+    s += `<rect x="${barX}" y="${barY}" width="${r1(barW)}" height="${r1(barH)}" rx="10" fill="${C.barFill}" stroke="${C.bar}"/>`;
+    /* padding on all four sides — the gap between content and bar edge */
+    const band = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="${C.padFill}"/>`;
+    s += band(barX, barY, barW, padPx) + band(barX, barY + barH - padPx, barW, padPx);
+    s += band(barX, barY, padPx, barH) + band(barX + barW - padPx, barY, padPx, barH);
+    const pb = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="none" stroke="${C.pad}" stroke-opacity=".55" stroke-dasharray="3 3"/>`;
+    s += pb(barX, barY, barW, padPx) + pb(barX, barY + barH - padPx, barW, padPx);
+    s += pb(barX, barY, padPx, barH) + pb(barX + barW - padPx, barY, padPx, barH);
+    /* content box = the tiles, then the tiles themselves */
+    s += `<rect x="${barX + padPx}" y="${barY + padPx}" width="${r1(contentW)}" height="${r1(th)}" rx="4" fill="none" stroke="${C.frame}" stroke-opacity=".45" stroke-dasharray="4 3"/>`;
+    for (let i = 0; i < n; i++) s += tile(barX + padPx + i * (tw + sp), barY + padPx, i === 0 ? { run: true } : {});
+    /* names */
+    s += chip(barX, barY - 26, "the bar", C.info);
+    s += chip(barX + barW, barY - 26, "content box = the tiles", C.struct, "end");
+    s += ln(barX + barW, barY - 17, barX + barW - padPx / 2, barY + 4, C.struct);
+    /* padding named once, on the right band, with a leader */
+    s += chip(barX + barW + 10, barY + barH / 2 - 8, `padding ${T.pad}pt`, C.pad);
+    s += ln(barX + barW + 8, barY + barH / 2 + 1, barX + barW - padPx / 2, barY + barH / 2 + 1, C.pad);
+    /* spacing between tiles — part of the width sum, 0pt today */
+    s += `<line x1="${r1(barX + padPx + tw)}" y1="${barY + padPx}" x2="${r1(barX + padPx + tw)}" y2="${barY + padPx + th}" stroke="${C.did}" stroke-opacity=".8"/>`;
+    s += chip(barX + padPx + tw, barY + padPx - 22, `spacing ${T.spacing}pt`, C.did, "middle");
+    /* width (x) and height (y) dimensions, architecture style */
+    s += dim(barX, barY + barH + 46, barW, `width ${r1(barW / U)}pt`, C.did);
+    s += txt(barX + barW / 2, barY + barH + 82,
+      `width = ${n} × ${T.w}pt tiles + ${n - 1} × ${T.spacing}pt spacing + 2 × ${T.pad}pt padding = ${r1(barW / U)}pt`, "#94a3b8", "middle");
+    s += vdim(barX - 46, barY, barH, `height ${r1(barH / U)}pt`, C.did);
+    s += vtxt(barX - barH / 2 - 62, barY + barH / 2, `height = ${T.h}pt tile + 2 × ${T.pad}pt padding = ${r1(barH / U)}pt`, "#94a3b8", 10);
+    return svg(barX + barW + 120, barY + barH + 96, s);
   }
 
   // ---- figure 2: sections -------------------------------------------------
@@ -510,7 +544,8 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     const n = (k) => d.tiles.filter((x) => x.kind === k).length;
     render();
     set("u-note", `${U} px/pt`);
-    set("b-pad", `${T.pad}pt per side`);
+    set("b-width", `${4} × ${T.w}pt + ${3} × ${T.spacing}pt + 2 × ${T.pad}pt = ${r1(4 * T.w + 3 * T.spacing + 2 * T.pad)}pt`);
+    set("b-height", `${T.h}pt + 2 × ${T.pad}pt = ${r1(T.h + 2 * T.pad)}pt`);
     set("s-apps", String(n("app")));
     set("s-folders", String(n("appFolder")));
     set("s-total", String(d.tiles.length));
