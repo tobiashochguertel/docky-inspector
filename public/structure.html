@@ -100,6 +100,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
 <li>Every tile reserves the <b>same frame</b>, whatever it shows: <span class="live" id="t-frame">…</span> for all <span class="live" id="t-total">…</span> tiles. That uniformity is what keeps the rows aligned.</li>
 <li>Frames never overlap. Center-to-center distance is always <code>(w₁+w₂)/2 + spacing</code>; your spacing is <span class="live" id="t-spacing">…</span>, so at 0 the frames touch exactly.</li>
 <li>With labels on, the tile reserves padding + icon slot + label row. A taller label grows the tile, never the icon.</li>
+<li>The <b>running indicator</b> below the icon is an optional overlay — present only while the app runs (a dot for one window, a pill for several). It is drawn outside the icon slot and takes no layout space, so switching it on or off cannot move anything.</li>
 </ul>
 </div>
 
@@ -275,9 +276,9 @@ are measured from your running dock. Every box is drawn to true scale at <span i
     p.push(b + txt(PW / 2, base + 18, "a section", C.info, "middle"));
     // panel 3 — a tile, focus = the icon slot
     let c = `<g transform="translate(43,${base - u(T.h)})">${focusBg(...slotBox())}</g>`;
-    c += tile(43, base - u(T.h), {});
+    c += tile(43, base - u(T.h), { run: true });
     c += `<g transform="translate(43,${base - u(T.h)})">${slotRing()}</g>`;
-    p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle"));
+    p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle") + chip(PW / 2, base + 30, "running indicator (optional)", C.did, "middle"));
     // panel 4 — the icon slot, focus = the painted artwork
     const sl = 120, sx = 33, sy = base - sl;
     const pbx = sx + (sl - u(T.paintFolder[0])) / 2, pby = sy + (sl - u(T.paintFolder[1])) / 2;
@@ -293,7 +294,7 @@ are measured from your running dock. Every box is drawn to true scale at <span i
       body += `<g transform="translate(${i * (PW + GAP)},0)">${panel}</g>`;
       if (i < p.length - 1) body += `<g transform="translate(${i * (PW + GAP) + PW + 8},${base - 55})">${arrow(0, 0)}</g>`;
     });
-    return svg(p.length * PW + (p.length - 1) * GAP, base + 34, body);
+    return svg(p.length * PW + (p.length - 1) * GAP, base + 54, body);
   }
 
   // ---- figure 1: the bar --------------------------------------------------
