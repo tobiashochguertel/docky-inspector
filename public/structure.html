@@ -4,345 +4,456 @@
 <meta charset="utf-8">
 <title>Docky Inspector — Tile Anatomy</title>
 <style>
-:root {
-  color-scheme: dark;
-  /* px per pt — figures are drawn to true scale */
-  --u: 2.5px;
-  --tile-w: 40; --tile-h: 68; --icon: 40; --label: 12; --label-gap: 8; --pad: 8; --spacing: 0;
-  --paint-mos: 36; --paint-min: 32;
-}
-body { background: #111827; color: #e5e7eb; font: 13px system-ui, sans-serif; margin: 24px auto; max-width: 900px; line-height: 1.5; }
-h1, h2 { color: #fff; }
-h2 { margin: 0 0 12px; font-size: 15px; }
-h3 { margin: 20px 0 8px; font-size: 13px; color: #93c5fd; font-weight: 600; }
-a { color: #93c5fd; }
-.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px 22px; margin: 16px 0; }
-.fig { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
-.figcol { display: flex; flex-direction: column; gap: 14px; }
-ul { margin: 8px 0; padding-left: 20px; }
+:root { color-scheme: dark; }
+body { background: #111827; color: #e5e7eb; font: 13px/1.55 system-ui, sans-serif; margin: 24px auto; max-width: 900px; padding: 0 16px 40px; }
+h1 { color: #fff; font-size: 21px; margin: 0 0 4px; }
+h1 a { font-size: 12px; font-weight: 400; color: #93c5fd; vertical-align: middle; margin-left: 6px; }
+h2 { color: #fff; font-size: 16px; margin: 0 0 4px; }
+.lead { color: #9ca3af; margin: 0 0 10px; }
+.sec { background: #1f2937; border: 1px solid #374151; border-radius: 10px; padding: 16px 20px 18px; margin: 16px 0; }
+.crumb { font: 11px ui-monospace, monospace; color: #64748b; margin: 0 0 12px; }
+.crumb b { color: #93c5fd; font-weight: 400; }
+svg.fig { display: block; max-width: 100%; height: auto; }
+text { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.cap { font-size: 11px; color: #6b7280; margin: 6px 0 12px; }
+ul { margin: 8px 0 0; padding-left: 20px; }
+li { margin: 2px 0; }
 code { background: #030712; padding: 0 5px; border-radius: 4px; font-size: 12px; }
-.live { color: #22c55e; }
-.scalenote { font-size: 11px; color: #6b7280; }
-
-/* chips name the parts directly on the visual */
-.chip { position: absolute; z-index: 5; font: 11px ui-monospace, monospace; color: #93c5fd; background: #0b1220; border: 1px solid #1e3a8a; border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
-.chip.n { color: #cbd5e1; border-color: #475569; }
-.chip.g { color: #4ade80; border-color: #14532d; }
-.chip.y { color: #fde047; border-color: #713f12; }
-.chip.o { color: #fdba74; border-color: #7c2d12; }
-.gchip { top: 50%; transform: translateY(-50%); left: 10px; }
-.lchip { top: 50%; transform: translateY(-50%); right: 10px; }
-
-/* section 2: single tile, blown up (not to scale) */
-.box-outer { border: 1px dashed #6b7280; background: #f59e0b22; padding: 30px 34px; position: relative; border-radius: 6px; }
-.box-mid { border: 1px solid #9ca3af; padding: 18px 22px; position: relative; border-radius: 6px; }
-.box-icon { background: #22c55e33; border: 1px dashed #22c55e; min-width: 340px; min-height: 150px; position: relative; border-radius: 4px; }
-.box-label { background: #facc1533; border: 1px dashed #facc15; margin-top: 6px; padding: 4px; position: relative; border-radius: 4px; }
-.box-icon > .chip { top: 8px; }
-.box-icon > .chip.slot { left: 10px; }
-.box-icon > .chip.badge { right: 10px; color: #86efac; border-color: #14532d; }
-.box-icon > .chip.indi { top: auto; bottom: 8px; left: 50%; transform: translateX(-50%); color: #e5e7eb; border-color: #475569; }
-.box-icon .dot { position: absolute; bottom: 32px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #e5e7eb; }
-.box-icon .bdot { position: absolute; top: 34px; right: 18px; width: 10px; height: 10px; border-radius: 50%; background: #4ade80; }
-.tag { position: absolute; font-size: 10px; color: #9ca3af; }
-
-/* mini tile, true scale from the live snapshot */
-.tl { position: relative; flex: none; width: calc(var(--tile-w) * var(--u)); height: calc(var(--tile-h) * var(--u)); }
-.tl .fr { position: absolute; inset: 0; border: 1px dashed #cbd5e1; border-radius: calc(2 * var(--u)); opacity: .7; z-index: 2; }
-.tl .ic { position: absolute; top: calc(var(--pad) * var(--u)); left: 0; right: 0; margin: auto; width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u)); border-radius: calc(6 * var(--u)); background: #60a5fa; }
-.tl .lb { position: absolute; bottom: 0; left: 0; right: 0; margin: auto; width: calc(var(--icon) * var(--u)); height: calc(var(--label) * var(--u)); background: #facc15; opacity: .85; border-radius: calc(2 * var(--u)); }
-.tl .lb.nolab { background: repeating-linear-gradient(45deg, #334155, #334155 4px, #1e293b 4px, #1e293b 8px); opacity: 1; }
-.tl .ic.run::after { content: ""; position: absolute; bottom: calc(-3 * var(--u)); left: 50%; width: calc(4 * var(--u)); height: calc(4 * var(--u)); margin-left: calc(-2 * var(--u)); border-radius: 50%; background: #e5e7eb; }
-
-/* figure 1: the bar row */
-.barrow { position: relative; display: flex; align-items: flex-start; background: #0b1220; border: 1px solid #374151; border-radius: 10px; padding: 30px 18px 20px; }
-.barrow.brk { padding-bottom: 46px; }
-.barrow.gutter { padding-left: 104px; }
-.barrow.spacetop { padding-top: 52px; }
-.trow { display: flex; align-items: flex-end; }
-.tcell { display: flex; flex-direction: column; align-items: center; }
-.dimtop { position: relative; height: 22px; width: calc(var(--tile-w) * var(--u)); }
-.dimtop > .chip { top: 0; left: 50%; transform: translateX(-50%); }
-.dimtop::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-top: 1px solid #475569; }
-.gapm { position: relative; flex: none; width: calc(var(--spacing) * var(--u)); height: calc(var(--tile-h) * var(--u)); }
-.gapm::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; border-left: 1px dashed #1e3a8a; }
-.gapm > .chip { top: -46px; left: 50%; transform: translateX(-50%); }
-
-/* figure 1b: sections */
-.seg { display: flex; flex-direction: column; align-items: stretch; }
-.brk2 { position: relative; margin-top: 14px; height: 0; border-top: 1px solid #475569; }
-.brk2::before, .brk2::after { content: ""; position: absolute; top: 0; width: 1px; height: 6px; background: #475569; }
-.brk2::before { left: 0; } .brk2::after { right: 0; }
-.brk2 > .chip { top: 6px; left: 50%; transform: translateX(-50%); }
-.dvcol { display: flex; flex-direction: column; align-items: center; margin: 0 20px; }
-.dvcol .dv { width: 1px; height: calc(var(--tile-h) * var(--u)); background: #6b7280; }
-.dvcol .dvlab { position: relative; height: 27px; }
-.dvcol .dvlab > .chip { top: 6px; left: 50%; transform: translateX(-50%); }
-
-/* figure 4: special tiles as separate cards */
-.cards { display: grid; grid-template-columns: repeat(3, max-content); gap: 14px; }
-.card { border: 1px solid #374151; border-radius: 8px; background: #0b1220; padding: 10px 12px 12px; }
-.card .cname { font-size: 11px; color: #e5e7eb; text-align: center; margin-bottom: 8px; }
-.card .cnotes { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.card .cnotes .chip { position: static; transform: none; }
-.ic.folder { background: #ffffff33; border-radius: calc(4 * var(--u)); padding: calc(1.5 * var(--u)); display: grid; grid-template-columns: 1fr 1fr; gap: calc(0.8 * var(--u)); }
-.ic.folder i { background: #34d399; border-radius: calc(1 * var(--u)); }
-.ic.min { background: #111827; border: 1px solid #374151; border-radius: calc(3 * var(--u)); }
-.ic.min .card2 { position: absolute; left: 50%; bottom: calc(1.2 * var(--u)); transform: translateX(-50%); width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); background: #a78bfa; border-radius: calc(1 * var(--u)); }
-.ic.min .badge { position: absolute; right: 0; bottom: 0; width: calc(9 * var(--u)); height: calc(9 * var(--u)); border-radius: 50%; background: #60a5fa; border: 1px solid #0b1220; }
-.ic.min.ph .card2 { background: #6b7280; width: calc(var(--paint-min) * 0.58 * var(--u)); height: calc(var(--paint-min) * 0.5 * var(--u)); }
-.ic.lp { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(1 * var(--u)); padding: calc(1.5 * var(--u)); background: #ffffff1a; border-radius: calc(4 * var(--u)); }
-.ic.lp i { background: #f472b6; border-radius: calc(0.6 * var(--u)); }
-.ic.wid { height: calc(var(--icon) * 0.78 * var(--u)); background: #374151; border-radius: calc(3 * var(--u)); }
-.ic.spacer { background: repeating-linear-gradient(45deg, #1f2937, #1f2937 4px, #263141 4px, #263141 8px); border: 1px dashed #4b5563; }
-.ic.trash { background: #6b7280; }
-
-/* figure 5: guides + slot/painted */
-.gbar { padding-left: 240px; }
-.trow.g { position: relative; display: flex; align-items: flex-start; }
-.gline { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed; z-index: 3; }
-.gline > span { position: absolute; right: calc(100% + 12px); top: 50%; transform: translateY(-50%); white-space: nowrap; font: 11px ui-monospace, monospace; background: #0b1220; border-radius: 4px; padding: 1px 6px; }
-.gl-top { top: 0; border-color: #3b82f6; }
-.gl-top > span { color: #93c5fd; border: 1px solid #1e3a8a; }
-.gl-icon { top: calc((var(--pad) + var(--icon)) * var(--u)); border-color: #22c55e; }
-.gl-icon > span { color: #4ade80; border: 1px solid #14532d; }
-.gl-base { top: calc((var(--pad) + var(--icon) + var(--label-gap) + var(--label) * 0.8) * var(--u)); border-color: #facc15; border-top-style: dotted; }
-.gl-base > span { color: #fde047; border: 1px solid #713f12; right: calc(100% + 104px); }
-.gl-bot { top: calc(var(--tile-h) * var(--u)); border-color: #f472b6; }
-.gl-bot > span { color: #f9a8d4; border: 1px solid #831843; right: calc(100% + 12px); }
-.pair { display: flex; gap: 26px; }
-.pv { text-align: center; }
-.pv .slot { width: calc(var(--icon) * var(--u)); height: calc(var(--icon) * var(--u)); border: 1px dashed #22c55e; background: #22c55e1a; border-radius: calc(4 * var(--u)); position: relative; }
-.pv .slot em { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-style: normal; font-size: calc(var(--icon) * var(--u) * 0.5); }
-.pv .slot .in { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border: 1px solid #fb9231; border-radius: calc(2 * var(--u)); background: #fb92314d; }
-.pv .slot .in.mos { width: calc(var(--paint-mos) * var(--u)); height: calc(var(--paint-mos) * var(--u)); }
-.pv .slot .in.cd { width: calc(var(--paint-min) * var(--u)); height: calc(var(--paint-min) * 0.85 * var(--u)); }
-.pv small { display: block; margin-top: 8px; font-size: 11px; color: #9ca3af; max-width: calc(var(--icon) * var(--u)); line-height: 1.35; }
-.pv small b { color: #fb9231; }
-.pv small .nm { color: #e5e7eb; }
+.live { color: #4ade80; }
 </style>
 </head>
 <body>
-<p><a href="/">← back to inspector</a></p>
-<h1>Anatomy of a Docky tile</h1>
-<p>Bottom dock, labels below — the default. Values marked <span class="live">● live</span> come from your running dock right now. Every box is drawn to true scale at <span id="u-note">2.5 px/pt</span>; figure 2 is a single tile blown up for legibility.</p>
+<h1>Anatomy of a Docky dock <a href="/">← back to inspector</a></h1>
+<p class="lead">Everything lives in a fixed nesting. This page walks it <b>outermost → innermost</b>:
+the bar, then sections, then tiles, then what is inside a tile. Values marked <span class="live">● live</span>
+are measured from your running dock. Every box is drawn to true scale at <span id="u-note">2.5 px/pt</span>.</p>
 
 <div class="sec">
-<h2>1. The bar and its sections</h2>
-
-<h3>1a · One row of identical tiles</h3>
-<div class="barrow gutter spacetop">
-  <span class="chip n gchip">the bar</span>
-  <div class="trow">
-    <div class="tcell">
-      <div class="dimtop"><span class="chip n">tile frame <span class="live" id="a-tile">…</span></span></div>
-      <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
-    </div>
-    <div class="gapm"><span class="chip">spacing <span class="live" id="a-gap">…</span></span></div>
-    <div class="tcell">
-      <div class="dimtop"></div>
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    </div>
-    <div class="tcell">
-      <div class="dimtop"><span class="chip n">identical</span></div>
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    </div>
-  </div>
+<h2>0 · The nesting, from outside in</h2>
+<p class="crumb">the bar <b>▸</b> a section <b>▸</b> a tile <b>▸</b> the icon slot <b>▸</b> the painted artwork</p>
+<div id="f-zoom"></div>
+<p class="cap">Each panel shows the highlighted region of the panel before it, drawn larger. Sections 1–4 explain one level each.</p>
 </div>
-<ul>
-<li>The bar is a single horizontal run of <b>fixed-size tiles</b>. Every tile reserves the same frame — <span class="live" id="a-tile2">…</span> for all <span class="live" id="a-count">…</span> of them.</li>
-<li>Tile frames never overlap: center-to-center distance always equals <code>(w₁+w₂)/2 + spacing</code>. The dashed marker between the first two tiles sits exactly in that spacing — at <span class="live" id="a-gap2">…</span> the frames touch.</li>
-<li>With labels on, <code>H = pad + icon + pad + label row</code>: a taller label grows the tile, never the icon.</li>
-</ul>
 
-<h3>1b · Sections are runs of tiles, split by dividers</h3>
-<div class="barrow brk gutter">
-  <span class="chip n gchip">the bar</span>
-  <div class="seg">
-    <div class="trow">
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    </div>
-    <div class="brk2"><span class="chip n">section · pinned apps <span class="live" id="b-apps">…</span></span></div>
-  </div>
-  <div class="dvcol">
-    <div class="dv"></div>
-    <div class="dvlab"><span class="chip">divider</span></div>
-  </div>
-  <div class="seg">
-    <div class="trow">
-      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    </div>
-    <div class="brk2"><span class="chip n">section · app folders <span class="live" id="b-folders">…</span></span></div>
-  </div>
-  <div class="dvcol">
-    <div class="dv"></div>
-    <div class="dvlab"><span class="chip">divider</span></div>
-  </div>
-  <div class="seg">
-    <div class="trow">
-      <div class="tl"><span class="fr"></span><div class="ic min"><span class="card2"></span><span class="badge"></span></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic trash"></div><div class="lb"></div></div>
-    </div>
-    <div class="brk2"><span class="chip n">section · minimized + trash</span></div>
-  </div>
-</div>
+<div class="sec">
+<h2>1 · The bar — the outermost container</h2>
+<p class="crumb">level 1</p>
+<div id="f-bar"></div>
 <ul>
-<li>A <b>section</b> is a run of tile kinds. The inspector groups tiles into sections and draws a marker under each — the brackets here.</li>
-<li>A <b>divider</b> separates two sections. It is not a tile: no frame, no icon, no label row.</li>
-<li>Your dock right now: <span class="live" id="b-apps2">…</span> app tiles, <span class="live" id="b-folders2">…</span> app-folder tiles, <span class="live" id="b-total">…</span> tiles in total.</li>
+<li>The bar is the only element that touches the screen. Everything else is <em>inside</em> it.</li>
+<li>It adds its own padding around the tile row (<span class="live" id="b-pad">…</span>), so the first and last tile never sit flush against the screen edge.</li>
+<li>Its height is derived: bar height = tile height + top/bottom padding. Grow a label and the bar grows with it.</li>
+<li>The bar owns no visuals of its own — background and separation only. The row of tiles is its content.</li>
 </ul>
 </div>
 
 <div class="sec">
-<h2>2. Inside one tile</h2>
-<div class="fig">
-<div class="box-outer">
-  <span class="chip n" style="top:6px;left:10px">tile frame <span class="live" id="d-frame">…</span></span>
-  <span class="chip n" style="top:6px;right:10px">overlays: no layout space</span>
-  <div class="box-mid"><span class="tag" style="top:2px;left:4px">paddings <span class="live" id="d-pad">…</span></span>
-  <div class="box-icon">
-    <span class="chip g slot">icon slot <span class="live" id="d-icon">…</span></span>
-    <span class="chip badge">notification badge</span>
-    <span class="bdot"></span>
-    <span class="dot"></span>
-    <span class="chip indi">running indicator</span>
-  </div>
-  <div class="box-label"><span class="chip y" style="top:2px;left:10px">label row <span class="live" id="d-label">…</span></span></div>
-  </div>
-</div>
-<div>
+<h2>2 · Sections — runs of tiles</h2>
+<p class="crumb">level 2, inside the bar</p>
+<div id="f-sections"></div>
 <ul>
-<li><b>Tile frame</b> — the layout box every tile reserves. Identical for all tiles in a bar.</li>
-<li><b>Paddings</b> — <code>vPad</code> on the cross axis (above the icon, and between icon and label), <code>iconPad</code> all around. Empty space, no visuals.</li>
-<li><b>Icon slot</b> — the icon's layout box. The <em>painted</em> artwork inside can be smaller: app icons carry transparency, folder mosaics render at ~0.36 minis, minimized cards at 0.8.</li>
-<li><b>Label row</b> — fixed height from the font size (<code>ceil(font×1.2)+2</code>), text truncated with a 2pt side inset so neighbors never touch.</li>
-<li><b>Overlays</b> — running indicator and notification badge float above the tile; they never take layout space.</li>
-</ul>
-</div>
-</div>
-</div>
-
-<div class="sec">
-<h2>3. Special tiles — one card per kind</h2>
-<div class="cards">
-  <div class="card">
-    <div class="cname">App folder</div>
-    <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    <div class="cnotes"><span class="chip n">background hugs the mosaic</span><span class="chip">6% chrome margin</span></div>
-  </div>
-  <div class="card">
-    <div class="cname">Minimized window</div>
-    <div class="tl"><span class="fr"></span><div class="ic min"><span class="card2"></span><span class="badge"></span></div><div class="lb"></div></div>
-    <div class="cnotes"><span class="chip o">preview card = 0.8</span><span class="chip n">app badge on corner</span></div>
-  </div>
-  <div class="card">
-    <div class="cname">Minimized, no permission</div>
-    <div class="tl"><span class="fr"></span><div class="ic min ph"><span class="card2"></span></div><div class="lb"></div></div>
-    <div class="cnotes"><span class="chip n">fallback symbol, same slot</span></div>
-  </div>
-  <div class="card">
-    <div class="cname">Launchpad / Start Menu</div>
-    <div class="tl"><span class="fr"></span><div class="ic lp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-    <div class="cnotes"><span class="chip n">fixed bundle id</span><span class="chip">icon overridable</span></div>
-  </div>
-  <div class="card">
-    <div class="cname">Widget</div>
-    <div class="tl"><span class="fr"></span><div class="ic wid"></div><div class="lb"></div></div>
-    <div class="cnotes"><span class="chip n">never labeled, but keeps the label row</span></div>
-  </div>
-  <div class="card">
-    <div class="cname">Spacer</div>
-    <div class="tl"><span class="fr"></span><div class="ic spacer"></div><div class="lb nolab"></div></div>
-    <div class="cnotes"><span class="chip n">no label row at all</span></div>
-  </div>
-</div>
-<ul>
-<li>Every kind keeps the same tile frame, so rows stay aligned even when the artwork differs.</li>
-<li><b>App folder</b> — the material background hugs the 2×2 mosaic rather than the slot, with a 6% chrome margin, so folders keep the breathing room that transparency gives app icons. Stack mode fans full-size icons instead.</li>
-<li><b>Minimized window</b> — a 0.8 preview card plus the owning app's badge icon; without screen-recording permission the card falls back to a smaller placeholder symbol in the same slot.</li>
-<li><b>Launchpad / Start Menu</b> — ordinary app tiles pointed at a fixed bundle id with an overridable icon (drawn here as a mini grid).</li>
+<li>A <b>section</b> is a run of tile kinds: pinned apps, app folders, minimized windows, trash. The inspector marks each run under the bar.</li>
+<li>A <b>divider</b> separates two sections. It is not a tile — no frame, no icon, no label row, and it takes no part in row alignment.</li>
+<li>Sections only exist at bar level. They have no visual presence inside a tile, and a tile knows nothing about them.</li>
+<li>Your dock right now: <span class="live" id="s-apps">…</span> app tiles, <span class="live" id="s-folders">…</span> app-folder tiles, <span class="live" id="s-total">…</span> tiles in total.</li>
 </ul>
 </div>
 
 <div class="sec">
-<h2>4. Reading the inspector</h2>
-<div class="fig">
-<div class="figcol">
-  <div class="barrow gbar">
-    <div class="trow g">
-      <div class="gline gl-top"><span>tile top</span></div>
-      <div class="gline gl-icon"><span>icon bottom</span></div>
-      <div class="gline gl-base"><span>label baseline ≈</span></div>
-      <div class="gline gl-bot"><span>tile bottom</span></div>
-      <div class="tl"><span class="fr"></span><div class="ic run"></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic folder"><i></i><i></i><i></i><i></i></div><div class="lb"></div></div>
-      <div class="tl"><span class="fr"></span><div class="ic"></div><div class="lb"></div></div>
-    </div>
-  </div>
-  <div class="pair">
-    <div class="pv"><div class="slot"><em>🧊</em></div><small><span class="nm">App icon</span><br><b>slot = painted</b><br>gap = transparency</small></div>
-    <div class="pv"><div class="slot"><em style="opacity:.3">🧊</em><div class="in mos"></div></div><small><span class="nm">Folder mosaic</span><br>painted <b id="p-mos">…</b><br>in a <span id="p-slot">…</span> slot</small></div>
-    <div class="pv"><div class="slot"><em style="opacity:.3">🪟</em><div class="in cd"></div></div><small><span class="nm">Minimized card</span><br>painted <b id="p-min">…</b><br>in a <span id="p-slot2">…</span> slot</small></div>
-  </div>
-</div>
-<div>
+<h2>3 · Tiles — one slot per item</h2>
+<p class="crumb">level 3, inside a section</p>
+<div id="f-tiles"></div>
 <ul>
-<li><b>Guides</b> — tile top, icon bottom, label baseline ≈, tile bottom. If all four run unbroken across the bar, rows are aligned.</li>
-<li><b>Metrics modal</b> — <em>Box</em> = tile in the bar, <em>Icon/Title</em> = sub-boxes with margins to the tile edge (they always sum to the frame), <em>Gaps</em> = the margin visual alone.</li>
-<li><b>slot vs painted</b> — <em>slot</em> (green dashed) is the measured layout box, <em>painted</em> (orange solid) the measured visual. Equal for app icons; smaller for mosaics and cards. That difference <em>is</em> the optical gap story.</li>
+<li>Every tile reserves the <b>same frame</b>, whatever it shows: <span class="live" id="t-frame">…</span> for all <span class="live" id="t-total">…</span> tiles. That uniformity is what keeps the rows aligned.</li>
+<li>Frames never overlap. Center-to-center distance is always <code>(w₁+w₂)/2 + spacing</code>; your spacing is <span class="live" id="t-spacing">…</span>, so at 0 the frames touch exactly.</li>
+<li>With labels on, the tile reserves padding + icon slot + label row. A taller label grows the tile, never the icon.</li>
 </ul>
 </div>
+
+<div class="sec">
+<h2>4 · Inside one tile — outer ring to painted pixels</h2>
+<p class="crumb">level 4, inside a tile</p>
+<div id="f-inside"></div>
+<ul>
+<li><b>Tile frame</b> — the reserved box. It has no visuals, only space.</li>
+<li><b>Paddings</b> — <code>vPad</code> above the icon and between icon and label (<span class="live" id="i-pad">…</span> each), <code>iconPad</code> around the icon. Empty space, never painted.</li>
+<li><b>Icon slot</b> — the icon's layout box, <span class="live" id="i-icon">…</span>. Fixed size for every tile kind, and inset inside the tile frame, so the frame is wider than the icon by design.</li>
+<li><b>Painted artwork</b> — what is actually drawn inside the slot. For an app icon it fills the slot and the perceived gap comes from its transparency; for folders and minimized cards the painted box is smaller (section 6).</li>
+<li><b>Label row</b> — fixed height from the font size (<code>ceil(font×1.2)+2</code>), <span class="live" id="i-label">…</span>, text inset 2pt per side so neighbours never touch.</li>
+<li><b>Overlays</b> — running indicator and notification badge float above the tile and take <em>no</em> layout space. That is why they can never cause a staircase.</li>
+</ul>
 </div>
+
+<div class="sec">
+<h2>5 · Tile variants — same frame, different artwork</h2>
+<p class="crumb">level 3, one card per kind</p>
+<div id="f-variants"></div>
+<ul>
+<li>App folder — the material background hugs the 2×2 mosaic instead of the slot, with a 6% chrome margin, so folders keep the breathing room that transparency gives app icons. Stack mode fans full-size icons instead.</li>
+<li>Minimized window — a 0.8 preview card plus the owning app's badge on the corner; without screen-recording permission the card falls back to a smaller placeholder symbol in the same slot.</li>
+<li>Launchpad / Start Menu — ordinary app tiles pointed at a fixed bundle id with an overridable icon (drawn as a mini grid).</li>
+<li>Widget — keeps the label row so rows stay aligned, but never draws a label.</li>
+<li>Spacer — no label row at all; it is a gap, not a tile that shows something.</li>
+</ul>
 </div>
+
+<div class="sec">
+<h2>6 · Reading the inspector</h2>
+<p class="crumb">level 3 · tools</p>
+<div id="f-guides"></div>
+<p class="cap"><b>Guides</b> — tile top, icon bottom, label baseline ≈, tile bottom. If all four run unbroken across the bar, the rows are aligned.</p>
+<div id="f-slotpainted"></div>
+<p class="cap"><b>slot vs painted</b> — slot (green dashed) is the measured layout box, painted (orange) the measured visual. Equal for app icons; smaller for mosaics and cards. That difference <em>is</em> the optical gap story.</p>
+<ul>
+<li><b>Metrics modal</b> — <em>Box</em> = the tile in the bar, <em>Icon/Title</em> = sub-boxes with their margins to the tile edge (they always sum to the frame), <em>Gaps</em> = the margin visual alone.</li>
+<li><b>Section markers</b> under the bar are level 2, <b>guides</b> are level 3, the modal's sub-boxes are level 4 — same structure, three zoom levels.</li>
+</ul>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#1e293b"/><rect width="4" height="8" fill="#334155"/>
+    </pattern>
+  </defs>
+</svg>
 
 <script>
 (async () => {
+  const U = 2.5;
+  const T = { w: 40, h: 68, icon: 40, label: 12, pad: 8, gap: 8, spacing: 0, paintFolder: [36, 36], paintMin: [32, 27] };
+  const C = {
+    barFill: "#0b1220", bar: "#4b5563",
+    frame: "#cbd5e1", slot: "#22c55e", slotFill: "#22c55e1f", appFill: "#3b82f6",
+    pad: "#f472b6", padFill: "#f472b61f",
+    label: "#facc15", labelFill: "#facc1544",
+    struct: "#cbd5e1", info: "#93c5fd", good: "#4ade80", warn: "#fde047", paint: "#fdba74",
+    run: "#e5e7eb", badge: "#4ade80",
+  };
+  const u = (pt) => Math.round(pt * U * 10) / 10;
+  const r1 = (n) => Math.round(n * 10) / 10;
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const txt = (x, y, s, fill = "#cbd5e1", anchor = "start", size = 11) =>
+    `<text x="${r1(x)}" y="${r1(y)}" fill="${fill}" text-anchor="${anchor}" font-size="${size}">${esc(s)}</text>`;
+  const chip = (x, y, s, color = C.struct, anchor = "start") => {
+    const w = s.length * 6.4 + 12;
+    const rx = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
+    return `<g><rect x="${r1(rx)}" y="${r1(y)}" width="${r1(w)}" height="17" rx="4" fill="#0b1220" fill-opacity=".93" stroke="${color}" stroke-opacity=".5"/>` +
+      txt(rx + 6, y + 12, s, color) + `</g>`;
+  };
+  const ln = (x1, y1, x2, y2, color = C.struct) =>
+    `<line x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}" stroke="${color}" stroke-opacity=".5" stroke-dasharray="2 3"/>`;
+  const dim = (x, y, w, s, color = C.struct) =>
+    `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + w)}" y2="${r1(y)}" stroke="${color}" stroke-opacity=".55"/>` +
+    `<line x1="${r1(x)}" y1="${r1(y - 4)}" x2="${r1(x)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".55"/>` +
+    `<line x1="${r1(x + w)}" y1="${r1(y - 4)}" x2="${r1(x + w)}" y2="${r1(y + 4)}" stroke="${color}" stroke-opacity=".55"/>` +
+    chip(x + w / 2, y - 21, s, color, "middle");
+  const svg = (w, h, body) => `<svg class="fig" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${body}</svg>`;
+  const focus = (x, y, w, h) => `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="6" fill="none" stroke="${C.info}" stroke-width="2"/>`;
+  const arrow = (x, y) => `<line x1="${r1(x)}" y1="${r1(y)}" x2="${r1(x + 16)}" y2="${r1(y)}" stroke="${C.info}" stroke-opacity=".6"/><path d="M${r1(x + 16)} ${r1(y - 4)} L${r1(x + 22)} ${r1(y)} L${r1(x + 16)} ${r1(y + 4)} Z" fill="${C.info}" fill-opacity=".7"/>`;
+
+  // ---- artwork inside the icon slot -------------------------------------
+  function art(x, y, s, kind, paint) {
+    if (kind === "folder") {
+      const pw = u(paint ? paint[0] : 36), ph = u(paint ? paint[1] : 36);
+      const px = x + (s - pw) / 2, py = y + (s - ph) / 2, pad = Math.max(2, s * 0.025);
+      const c = (pw - pad * 2 - 2) / 2;
+      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="${r1(s * 0.11)}" fill="#ffffff33"/>`;
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++)
+        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1.5" fill="#34d399"/>`;
+      return r;
+    }
+    if (kind === "min") {
+      const pw = u(paint ? paint[0] : 32), ph = u(paint ? paint[1] : 27);
+      const px = x + (s - pw) / 2, py = y + s - ph - Math.max(2, s * 0.04);
+      return `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="#a78bfa"/>` +
+        `<circle cx="${r1(px + pw)}" cy="${r1(py + ph)}" r="5" fill="#60a5fa" stroke="#0b1220"/>`;
+    }
+    if (kind === "minph") {
+      const pw = u(18), ph = u(16);
+      return `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + s - ph - 6)}" width="${r1(pw)}" height="${r1(ph)}" rx="2" fill="#6b7280"/>`;
+    }
+    if (kind === "launchpad") {
+      const g = s * 0.9, pad = Math.max(2, s * 0.03), c = (g - pad * 2 - 4) / 3;
+      const px = x + (s - g) / 2, py = y + (s - g) / 2;
+      let r = `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(g)}" height="${r1(g)}" rx="${r1(s * 0.1)}" fill="#ffffff26"/>`;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+        r += `<rect x="${r1(px + pad + j * (c + 2))}" y="${r1(py + pad + i * (c + 2))}" width="${r1(c)}" height="${r1(c)}" rx="1" fill="#f472b6"/>`;
+      return r;
+    }
+    if (kind === "trash") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.09)}" fill="#6b7280"/>`;
+    if (kind === "widget") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s * 0.78)}" rx="${r1(s * 0.07)}" fill="#374151"/>`;
+    if (kind === "spacer") return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.07)}" fill="url(#hatch)" stroke="#4b5563" stroke-opacity=".7" stroke-dasharray="4 3"/>`;
+    return "";
+  }
+
+  // ---- one tile, drawn at the origin -------------------------------------
+  function tileInner(o) {
+    const tw = u(T.w), th = u(T.h), ic = u(T.icon), lb = u(T.label), pd = u(T.pad);
+    const ix = (tw - ic) / 2, iy = pd, ly = th - lb;
+    const isApp = !o.kind || o.kind === "app";
+    let s = "";
+    if (o.pad) s += `<rect x="${r1(ix)}" y="0" width="${r1(ic)}" height="${r1(iy + ic)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
+    s += `<rect x="${r1(ix)}" y="${r1(iy)}" width="${r1(ic)}" height="${r1(ic)}" rx="${r1(ic * 0.09)}" fill="${isApp ? C.appFill : C.slotFill}" stroke="${C.slot}" stroke-opacity=".85" stroke-dasharray="5 3"/>`;
+    if (o.label !== false) s += `<rect x="${r1(ix)}" y="${r1(ly)}" width="${r1(ic)}" height="${r1(lb)}" rx="2" fill="${o.label === "none" ? "url(#hatch)" : C.labelFill}" stroke="${o.label === "none" ? "#4b5563" : C.label}" stroke-opacity=".85" stroke-dasharray="5 3"/>`;
+    if (o.kind && o.kind !== "app") s += art(ix, iy, ic, o.kind, o.paint);
+    if (o.run) s += `<circle cx="${r1(tw / 2)}" cy="${r1(iy + ic + 5)}" r="3.5" fill="${C.run}"/>`;
+    if (o.badge) s += `<circle cx="${r1(ix + ic - 3)}" cy="${r1(iy + 3)}" r="4" fill="${C.badge}"/>`;
+    s += `<rect x="0" y="0" width="${r1(tw)}" height="${r1(th)}" rx="4" fill="none" stroke="${C.frame}" stroke-opacity=".65" stroke-dasharray="4 3"/>`;
+    return s;
+  }
+  const tile = (x, y, o = {}) => {
+    const sc = o.sc ?? 1;
+    const inner = tileInner(o);
+    return `<g transform="translate(${r1(x)},${r1(y)}) scale(${sc})">${inner}</g>` +
+      (o.focusOn ? `<g transform="translate(${r1(x)},${r1(y)}) scale(${sc})">${o.focusOn}</g>` : "");
+  };
+  // focus rings for the tile's own sub-boxes, in tile-local px
+  const slotRing = () => focus((u(T.w) - u(T.icon)) / 2, u(T.pad), u(T.icon), u(T.icon));
+  const paintRing = (pw, ph) => focus((u(T.w) - u(T.icon)) / 2 + (u(T.icon) - u(pw)) / 2, u(T.pad) + (u(T.icon) - u(ph)) / 2, u(pw), u(ph));
+
+  // ---- figure 0: zoom sequence, outer -> inner ---------------------------
+  function figZoom() {
+    const PW = 186, GAP = 40, base = 170;
+    const p = [];
+    // panel 1 — the bar
+    let a = `<rect x="0" y="${base - 120}" width="${PW}" height="120" rx="8" fill="${C.barFill}" stroke="${C.bar}"/>`;
+    const s3 = 0.22;
+    a += tile(10, base - 100, { sc: s3 }) + tile(34, base - 100, { sc: s3 });
+    a += `<line x1="60" y1="${base - 100}" x2="60" y2="${base - 22}" stroke="#6b7280"/>`;
+    a += tile(66, base - 100, { sc: s3 }) + tile(90, base - 100, { sc: s3 });
+    a += `<line x1="116" y1="${base - 100}" x2="116" y2="${base - 22}" stroke="#6b7280"/>`;
+    a += tile(122, base - 100, { sc: s3 }) + tile(146, base - 100, { sc: s3 });
+    a += focus(63, base - 104, 48, 84);
+    p.push(a + txt(PW / 2, base + 18, "the bar", C.info, "middle"));
+    // panel 2 — a section
+    let b = `<rect x="0" y="${base - 130}" width="${PW}" height="130" rx="8" fill="${C.barFill}" stroke="${C.info}" stroke-opacity=".7" stroke-dasharray="5 3"/>`;
+    b += tile(14, base - 118, { sc: 0.45 }) + tile(70, base - 118, { sc: 0.45 }) + tile(126, base - 118, { sc: 0.45 });
+    b += `<g transform="translate(70,${base - 118}) scale(0.45)">${slotRing()}</g>`;
+    p.push(b + txt(PW / 2, base + 18, "a section", C.info, "middle"));
+    // panel 3 — a tile
+    let c = tile(43, base - u(T.h), {});
+    c += `<g transform="translate(43,${base - u(T.h)})">${slotRing()}</g>`;
+    p.push(c + txt(PW / 2, base + 18, "a tile", C.struct, "middle"));
+    // panel 4 — the icon slot and the painted artwork
+    const sl = 120, sx = 33, sy = base - sl;
+    let d = `<rect x="${sx}" y="${sy}" width="${sl}" height="${sl}" rx="10" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="5 3"/>`;
+    d += art(sx, sy, sl, "folder", T.paintFolder);
+    d += focus(sx + (sl - u(T.paintFolder[0])) / 2, sy + (sl - u(T.paintFolder[1])) / 2, u(T.paintFolder[0]), u(T.paintFolder[1]));
+    d += chip(PW, base - sl - 6, "the icon slot", C.good, "end");
+    d += chip(PW, base - sl + 14, "painted artwork", C.paint, "end");
+    p.push(d + txt(PW / 2, base + 18, "the icon slot", C.struct, "middle"));
+    let body = "";
+    p.forEach((panel, i) => {
+      body += `<g transform="translate(${i * (PW + GAP)},0)">${panel}</g>`;
+      if (i < p.length - 1) body += `<g transform="translate(${i * (PW + GAP) + PW + 8},${base - 55})">${arrow(0, 0)}</g>`;
+    });
+    return svg(p.length * PW + (p.length - 1) * GAP, base + 34, body);
+  }
+
+  // ---- figure 1: the bar --------------------------------------------------
+  function figBar() {
+    const padPx = u(T.pad), tw = u(T.w), th = u(T.h);
+    const barH = th + padPx * 2, barY = 60, barX = 96;
+    const n = 4, barW = n * tw + (n - 1) * u(T.spacing) + padPx * 2;
+    let s = `<rect x="${barX}" y="${barY}" width="${r1(barW)}" height="${r1(barH)}" rx="10" fill="${C.barFill}" stroke="${C.bar}"/>`;
+    s += `<rect x="${barX}" y="${barY}" width="${r1(padPx)}" height="${r1(barH)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
+    s += `<rect x="${r1(barX + barW - padPx)}" y="${barY}" width="${r1(padPx)}" height="${r1(barH)}" fill="${C.padFill}" stroke="${C.pad}" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
+    for (let i = 0; i < n; i++) s += tile(barX + padPx + i * (tw + u(T.spacing)), barY + padPx, i === 0 ? { run: true } : {});
+    s += chip(barX, barY - 24, "the bar", C.info);
+    s += chip(barX + barW, barY - 24, "the tile row — its content", C.struct, "end");
+    s += ln(barX + padPx / 2, barY + barH + 2, barX + padPx / 2, barY + barH - 10, C.pad);
+    s += chip(barX + padPx / 2, barY + barH + 6, `bar padding ${T.pad}pt`, C.pad, "middle");
+    s += dim(barX + padPx, barY + barH + 40, barW - padPx * 2, "bar = tile height + 2 × padding", C.info);
+    return svg(barX + barW + 60, barY + barH + 60, s);
+  }
+
+  // ---- figure 2: sections -------------------------------------------------
+  function figSections() {
+    const padPx = u(T.pad), tw = u(T.w), th = u(T.h), dvW = 22;
+    const barY = 52, barH = th + padPx * 2, barX = 76;
+    const groups = [[2, "app"], [2, "folder"], [2, "min"]];
+    const secs = groups.map(([n]) => n * tw + (n - 1) * u(T.spacing));
+    const barW = padPx * 2 + secs.reduce((a, b) => a + b, 0) + dvW * 2;
+    let s = `<rect x="${barX}" y="${barY}" width="${r1(barW)}" height="${r1(barH)}" rx="10" fill="${C.barFill}" stroke="${C.bar}"/>`;
+    const names = ["pinned apps", "app folders", "minimized + trash"];
+    let x = barX + padPx;
+    const secY = barY + padPx, secH = th;
+    groups.forEach(([n, kind], gi) => {
+      for (let i = 0; i < n; i++) {
+        const o = { kind: kind === "app" ? undefined : kind, paint: kind === "folder" ? T.paintFolder : kind === "min" ? T.paintMin : undefined };
+        s += tile(x + i * (tw + u(T.spacing)), secY, o);
+      }
+      const bx = x, bw = secs[gi];
+      const by = barY + barH + 16;
+      s += `<line x1="${r1(bx)}" y1="${by}" x2="${r1(bx + bw)}" y2="${by}" stroke="${C.info}" stroke-opacity=".7"/>`;
+      s += `<line x1="${r1(bx)}" y1="${by}" x2="${r1(bx)}" y2="${by + 6}" stroke="${C.info}" stroke-opacity=".7"/>`;
+      s += `<line x1="${r1(bx + bw)}" y1="${by}" x2="${r1(bx + bw)}" y2="${by + 6}" stroke="${C.info}" stroke-opacity=".7"/>`;
+      s += chip(bx + bw / 2, by + 6, `section · ${names[gi]}`, C.info, "middle");
+      x += bw;
+      if (gi < groups.length - 1) {
+        s += `<line x1="${r1(x + dvW / 2)}" y1="${barY + 10}" x2="${r1(x + dvW / 2)}" y2="${barY + barH - 10}" stroke="#6b7280"/>`;
+        s += chip(x + dvW / 2, barY - 26, "divider", C.warn, "middle");
+        x += dvW;
+      }
+    });
+    s += chip(barX, barY - 24, "the bar", C.info);
+    return svg(barX + barW + 40, barY + barH + 52, s);
+  }
+
+  // ---- figure 3: tiles ----------------------------------------------------
+  function figTiles() {
+    const tw = u(T.w), th = u(T.h), n = 3, sp = u(T.spacing);
+    const x0 = 110, y0 = 76, rowW = n * tw + (n - 1) * sp;
+    let s = `<rect x="${x0 - 16}" y="${y0 - 12}" width="${r1(rowW + 32)}" height="${r1(th + 24)}" rx="10" fill="none" stroke="${C.info}" stroke-opacity=".35" stroke-dasharray="6 4"/>`;
+    for (let i = 0; i < n; i++) s += tile(x0 + i * (tw + sp), y0, i === 0 ? { run: true } : {});
+    s += dim(x0, y0 - 26, tw, `tile ${T.w}×${T.h}pt`, C.struct);
+    s += dim(x0 + 2 * (tw + sp), y0 - 26, tw, "identical", C.struct);
+    s += `<line x1="${r1(x0 + tw)}" y1="${y0}" x2="${r1(x0 + tw)}" y2="${r1(y0 + th)}" stroke="${C.info}" stroke-opacity=".7" stroke-dasharray="2 3"/>`;
+    s += chip(x0 + tw, y0 - 72, `spacing ${T.spacing}pt`, C.info, "middle");
+    s += chip(x0 + rowW, y0 - 72, "one section", C.info, "end");
+    s += ln(x0 + rowW - 4, y0 - 62, x0 + rowW - 20, y0 - 18, C.info);
+    s += ln(x0 + 6, y0 + th + 12, x0 + rowW, y0 + th + 12, C.info);
+    s += chip(x0 + rowW, y0 + th + 18, "all frames identical → rows stay aligned", C.struct, "end");
+    return svg(760, y0 + th + 50, s);
+  }
+
+  // ---- figure 4: inside one tile -----------------------------------------
+  function figInside() {
+    const tw = u(T.w), th = u(T.h), ic = u(T.icon), lb = u(T.label), pd = u(T.pad);
+    const x = 60, y = 56, cx = x + tw + 66;
+    let s = tile(x, y, { pad: true, run: true, badge: true });
+    // [label, color, desired y, anchor x, anchor y]
+    const rows = [
+      [`tile frame ${T.w}×${T.h}pt`, C.struct, y + 8, x + tw, y + 2],
+      [`padding ${T.pad}pt`, C.pad, y + pd + ic * 0.35, x + tw, y + pd * 0.6],
+      [`icon slot ${T.icon}×${T.icon}pt`, C.good, y + pd + ic * 0.8, x + tw, y + pd + ic * 0.5],
+      ["painted artwork", C.paint, y + pd + ic + lb + 16, x + tw - 3, y + pd + ic - 8],
+      [`label row ${T.icon}×${T.label}pt`, C.warn, y + th - lb / 2, x + tw, y + th - lb / 2],
+      ["overlays — no layout space", C.info, y + th + 30, x + tw / 2, y + pd + ic + 5],
+    ];
+    let prev = -Infinity;
+    rows.forEach(([label, color, want, ax, ay]) => {
+      const ty = Math.max(want, prev + 21);
+      prev = ty;
+      s += chip(cx, ty - 8, label, color);
+      s += ln(cx - 12, ty + 1, ax, ay, color);
+    });
+    s += txt(x, y + th + 56, `icon slot is inset ${r1((T.w - T.icon) / 2)}pt per side inside the ${T.w}pt frame`, "#6b7280");
+    return svg(720, y + th + 74, s);
+  }
+
+  // ---- figure 5: tile variants -------------------------------------------
+  function figVariants() {
+    const sc = 0.82, tw = u(T.w) * sc, th = u(T.h) * sc, gap = 14, n = 7;
+    const cardW = tw + 22, W = n * cardW + (n - 1) * gap, H = th + 108;
+    const items = [
+      ["App folder", { kind: "folder", paint: T.paintFolder }, ["background hugs", "the mosaic"]],
+      ["Minimized", { kind: "min", paint: T.paintMin }, ["preview card 0.8", "+ app badge"]],
+      ["No permission", { kind: "minph" }, ["fallback symbol", "in the same slot"]],
+      ["Launchpad", { kind: "launchpad" }, ["fixed bundle id,", "icon overridable"]],
+      ["Trash", { kind: "trash" }, ["ordinary tile,", "never labeled"]],
+      ["Widget", { kind: "widget" }, ["keeps the label", "row, draws none"]],
+      ["Spacer", { kind: "spacer", label: "none" }, ["no label row", "at all"]],
+    ];
+    let s = "";
+    items.forEach(([name, o, note], i) => {
+      const cx = i * (cardW + gap);
+      s += `<rect x="${r1(cx)}" y="0" width="${r1(cardW)}" height="${r1(H)}" rx="8" fill="${C.barFill}" stroke="${C.bar}"/>`;
+      s += txt(cx + cardW / 2, 18, name, "#e5e7eb", "middle");
+      s += tile(cx + (cardW - tw) / 2, 26, { ...o, sc });
+      s += txt(cx + cardW / 2, 40 + th + 14, note[0], "#9ca3af", "middle");
+      s += txt(cx + cardW / 2, 40 + th + 28, note[1], "#9ca3af", "middle");
+    });
+    return svg(W, H, s);
+  }
+
+  // ---- figure 6a: guides --------------------------------------------------
+  function figGuides() {
+    const tw = u(T.w), th = u(T.h), ic = u(T.icon), lb = u(T.label), pd = u(T.pad), n = 4;
+    const x0 = 150, y0 = 40, rowW = n * tw + (n - 1) * u(T.spacing);
+    let s = "";
+    const guides = [
+      [y0, "tile top", C.info],
+      [y0 + pd + ic, "icon bottom", C.good],
+      [y0 + pd + ic + u(T.gap) + lb * 0.8, "label baseline ≈", C.warn],
+      [y0 + th, "tile bottom", "#f9a8d4"],
+    ];
+    guides.forEach(([gy, label, color], i) => {
+      const cy = gy + 0.5;
+      s += `<line x1="${x0 - 14}" y1="${r1(cy)}" x2="${r1(x0 + rowW + 14)}" y2="${r1(cy)}" stroke="${color}" stroke-opacity=".7" stroke-dasharray="${i === 2 ? "2 4" : "5 4"}"/>`;
+      s += chip(x0 - 20, cy - 8, label, color, "end");
+    });
+    for (let i = 0; i < n; i++) s += tile(x0 + i * (tw + u(T.spacing)), y0, i === 0 ? { run: true } : i === 2 ? { kind: "folder", paint: T.paintFolder } : {});
+    return svg(700, y0 + th + 18, s);
+  }
+
+  // ---- figure 6b: slot vs painted -----------------------------------------
+  function figSlotPainted() {
+    const sc = 1.45, s = u(T.icon) * sc, gap = 42, n = 3;
+    const W = n * s + (n - 1) * gap + 40, H = s + 96;
+    const items = [
+      ["App icon", null, `${T.icon}×${T.icon}pt`, "slot = painted · gap = transparency"],
+      ["Folder mosaic", T.paintFolder, `${T.paintFolder[0]}×${T.paintFolder[1]}pt`, "background hugs the painted box"],
+      ["Minimized card", T.paintMin, `${T.paintMin[0]}×${T.paintMin[1]}pt`, "card at 0.8 of the slot"],
+    ];
+    let b = "";
+    items.forEach(([name, paint, dims, note], i) => {
+      const x = 20 + i * (s + gap), y = 14;
+      let t = `<rect x="${r1(x)}" y="${y}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.08)}" fill="${C.slotFill}" stroke="${C.slot}" stroke-dasharray="6 4"/>`;
+      if (paint) {
+        const pw = u(paint[0]) * sc, ph = u(paint[1]) * sc;
+        t += `<rect x="${r1(x + (s - pw) / 2)}" y="${r1(y + (s - ph) / 2)}" width="${r1(pw)}" height="${r1(ph)}" rx="4" fill="${C.paint}" fill-opacity=".35" stroke="${C.paint}"/>`;
+      } else {
+        t += `<rect x="${r1(x)}" y="${y}" width="${r1(s)}" height="${r1(s)}" rx="${r1(s * 0.08)}" fill="${C.appFill}" fill-opacity=".85"/>`;
+      }
+      t += chip(x + s, y + s + 8, "painted", C.paint, "end");
+      t += txt(x + s / 2, y + s + 36, name, "#e5e7eb", "middle");
+      t += txt(x + s / 2, y + s + 54, paint ? `painted ${dims} in a ${T.icon}pt slot` : `painted ${dims}`, paint ? C.paint : "#9ca3af", "middle");
+      t += txt(x + s / 2, y + s + 70, note, "#6b7280", "middle");
+      b += t;
+    });
+    return svg(W, H, b);
+  }
+
+  const render = () => {
+    document.getElementById("f-zoom").innerHTML = figZoom();
+    document.getElementById("f-bar").innerHTML = figBar();
+    document.getElementById("f-sections").innerHTML = figSections();
+    document.getElementById("f-tiles").innerHTML = figTiles();
+    document.getElementById("f-inside").innerHTML = figInside();
+    document.getElementById("f-variants").innerHTML = figVariants();
+    document.getElementById("f-guides").innerHTML = figGuides();
+    document.getElementById("f-slotpainted").innerHTML = figSlotPainted();
+  };
+  render();
+
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   try {
     const env = await (await fetch("/api/layout")).json();
     const d = env.data;
     const t = d.tiles.find((x) => x.kind === "app") ?? d.tiles[0];
     const row = Math.ceil(d.fontSize * 1.2) + 2;
-    const pad = d.padding?.v ?? 0;
-    const u = Number(getComputedStyle(document.documentElement).getPropertyValue("--u").replace("px", "")) || 2.5;
-    const root = document.documentElement.style;
-    root.setProperty("--u", `${u}px`);
-    root.setProperty("--tile-w", String(t.w));
-    root.setProperty("--tile-h", String(t.h));
-    root.setProperty("--icon", String(t.iconM?.[0] ?? t.w));
-    root.setProperty("--label", String(t.labelM?.[1] ?? row));
-    root.setProperty("--label-gap", String(pad));
-    root.setProperty("--pad", String(pad));
-    root.setProperty("--spacing", String(d.spacing));
+    T.w = t.w; T.h = t.h; T.icon = t.iconM?.[0] ?? t.w; T.label = t.labelM?.[1] ?? row;
+    T.pad = d.padding?.v ?? 0; T.gap = T.pad; T.spacing = d.spacing;
     const fold = d.tiles.find((x) => x.kind === "appFolder" && x.paintM);
     const min = d.tiles.find((x) => x.kind === "min" && x.paintM);
-    const r1 = (n) => String(Math.round(n * 10) / 10);
-    if (fold) root.setProperty("--paint-mos", String(Math.round(fold.paintM[0] * 10) / 10));
-    if (min) root.setProperty("--paint-min", String(Math.round(min.paintM[0] * 10) / 10));
+    if (fold) T.paintFolder = [Math.round(fold.paintM[0] * 10) / 10, Math.round(fold.paintM[1] * 10) / 10];
+    if (min) T.paintMin = [Math.round(min.paintM[0] * 10) / 10, Math.round(min.paintM[1] * 10) / 10];
     const n = (k) => d.tiles.filter((x) => x.kind === k).length;
-    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-    set("u-note", `${u} px/pt`);
-    set("p-mos", fold ? `${r1(fold.paintM[0])}×${r1(fold.paintM[1])}pt` : "…");
-    set("p-min", min ? `${r1(min.paintM[0])}×${r1(min.paintM[1])}pt` : "…");
-    set("p-slot", `${t.w}pt`);
-    set("p-slot2", `${t.w}pt`);
-    set("a-tile", `${t.w}×${t.h}pt`);
-    set("a-tile2", `${t.w}×${t.h}pt`);
-    set("a-gap", `${d.spacing}pt`);
-    set("a-gap2", `${d.spacing}pt spacing`);
-    set("a-count", String(d.tiles.length));
-    set("b-apps", String(n("app")));
-    set("b-folders", String(n("appFolder")));
-    set("b-apps2", String(n("app")));
-    set("b-folders2", String(n("appFolder")));
-    set("b-total", String(d.tiles.length));
-    set("d-frame", `${t.w}×${t.h}pt`);
-    set("d-pad", `v ${pad}pt`);
-    set("d-icon", `${t.w}×${t.h - 2 * pad - row}pt`);
-    set("d-label", `${t.w}×${row}pt · "${t.label}"`);
-  } catch { /* offline snapshot view */ }
+    render();
+    set("u-note", `${U} px/pt`);
+    set("b-pad", `${T.pad}pt per side`);
+    set("s-apps", String(n("app")));
+    set("s-folders", String(n("appFolder")));
+    set("s-total", String(d.tiles.length));
+    set("t-frame", `${T.w}×${T.h}pt`);
+    set("t-total", String(d.tiles.length));
+    set("t-spacing", `${T.spacing}pt`);
+    set("i-pad", `${T.pad}pt`);
+    set("i-icon", `${T.icon}×${T.icon}pt`);
+    set("i-label", `${T.icon}×${T.label}pt`);
+  } catch (e) { /* offline: figures still render from defaults */ }
 })();
 </script>
 </body>
